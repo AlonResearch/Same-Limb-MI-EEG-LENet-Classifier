@@ -1,0 +1,31 @@
+# Ignore all zip files
+*.zip
+MatlabToolkits/
+
+
+
+# Large raw datasets
+Datasets/BCICIV_2a_gdf/
+Datasets/BCICIV_2b_gdf/
+
+
+# Python/venv artifacts
+__pycache__/
+*.py[cod]
+*.pyd
+.venv/
+.env/
+.python-version
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Editors/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs and temp
+*.log
+*.tmp
