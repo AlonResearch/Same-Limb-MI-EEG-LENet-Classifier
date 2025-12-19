@@ -36,16 +36,17 @@ All dependencies are pinned in `pyproject.toml` / `uv.lock` for reproducibility.
 
 The repository expects the MI3 BIDS derivative files under `Datasets/MI3`:
 
-- `Datasets/MI3/derivatives/sub-011_eeg.mat` – primary training file used in the notebook.
+- `Datasets/MI3/derivatives/sub-011_eeg.mat` and `sub-011_eeg90hz.mat` – cleaned tensors generated from the bundled MATLAB script.
+- `Datasets/MI3/sourcedata/sub-011/ses-0Y/eeg/*.cnt` – raw CNT acquisitions for the single retained subject (used for re-exporting derivatives).
 - Raw GDF datasets for BCI Competition IV 2a/2b are stored under `Datasets/BCICIV_*` (ignored by git).
 
-If you place the MI3 derivatives elsewhere, adjust the path in Cell 6 (“Loading the data”) of the notebook.
+- If you place the MI3 derivatives elsewhere, adjust the path in Cell 6 ("Loading the data") of the notebook.
 
 ## Preprocessing scripts
 
 - Raw-to-mat conversion lives in the MATLAB `.m` utilities bundled with each dataset folder (see [Datasets/BCICIV_2a_gdf/Code](Datasets/BCICIV_2a_gdf/Code) and [Datasets/MI3/code](Datasets/MI3/code)).
 
-- Dataset-specific READMEs inside `Datasets/**` document channel mapping, filtering, and export parameters (e.g., [Datasets/MI3/README.md](Datasets/MI3/README.txt)). Follow those instructions before running the notebook so the derivatives match the expected format.
+- Dataset-specific READMEs inside `Datasets/**` document channel mapping, filtering, and export parameters (e.g., [Datasets/MI3/README.md](Datasets/MI3/README.md)). Follow those instructions before running the notebook so the derivatives match the expected format.
 
 ## Running experiments
 
