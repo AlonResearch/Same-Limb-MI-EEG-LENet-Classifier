@@ -5,8 +5,8 @@ clear
 clc
 
 %Load and save directories
-loadDir = 'Datasets\MI3class1Limb\sourcedata\';
-saveDir = 'Datasets\MI3class1Limb\derivatives\';
+loadDir = 'Datasets\MI3\sourcedata\';
+saveDir = 'Datasets\MI3\derivatives\';
 
 % Add EEGLAB / Neuroscan Extension / EEG-Bids extension / Biosig Extension / AAR extension to MATLAB path
 % Change this path to where you have EEGLAB installed
@@ -77,7 +77,7 @@ disp(checkPath) % display the path of the file being created
             EEG = pop_loadcnt( PathFullFile , 'dataformat', 'auto', 'memmapfile', '');
             LOADEDEEG = EEG;
             % add the location map according to the channel_name
-            EEG=pop_chanedit(EEG, 'lookup','Datasets\MI3class1Limb\code\channel_dict.ced');
+            EEG=pop_chanedit(EEG, 'lookup','Datasets\MI3\code\channel_dict.ced');
             
             % Extract EMG and EOG channels
             EMG = pop_select(EEG, 'channel', {'EMG1', 'EMG2'});
