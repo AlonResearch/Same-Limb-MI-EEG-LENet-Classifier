@@ -4,8 +4,9 @@ Motor-imagery EEG trials from the MI3 dataset are classified with lightweight LE
 
 - **LENet (Conv-only classifier block)** – matches the MI2/BCI IV-2a architecture in the original publication.
 - **LENet_FCL** – keeps the convolutional front-end but swaps the final block for a dynamically sized fully connected layer to support higher-channel MI3 recordings.
+- More models (RNNs, Transformers, etc) to be added soon...
 
-Training, evaluation, and visualization live in `MI3_CNN.ipynb`. Saved weights for the most recent training run are stored as `lenet_ccb_mi3.pth` and `lenet_fcl_mi3.pth`.
+Training, evaluation, and visualization live in `Notebooks/'datasetname'_'modelname'.ipynb`. Saved weights for the most recent training run of each model are stored under `ModelWeights/` as `'ModelName'_'DatasetName'.pth`.
 
 ## Environment
 
@@ -40,9 +41,15 @@ The repository expects the MI3 BIDS derivative files under `Datasets/MI3`:
 
 If you place the MI3 derivatives elsewhere, adjust the path in Cell 6 (“Loading the data”) of the notebook.
 
+## Preprocessing scripts
+
+- Raw-to-mat conversion lives in the MATLAB `.m` utilities bundled with each dataset folder (see [Datasets/BCICIV_2a_gdf/Code](Datasets/BCICIV_2a_gdf/Code) and [Datasets/MI3/code](Datasets/MI3/code)).
+
+- Dataset-specific READMEs inside `Datasets/**` document channel mapping, filtering, and export parameters (e.g., [Datasets/MI3/README.md](Datasets/MI3/README.txt)). Follow those instructions before running the notebook so the derivatives match the expected format.
+
 ## Running experiments
 
-1. **Launch VS Code / Jupyter** and open `MI3_CNN.ipynb`.
+1. **Launch VS Code / Jupyter** and open `Notebooks/MI3_CNN.ipynb`.
 2. Run Cells 1–3 to validate the GPU environment.
 3. Cell 4 defines helper functions (`data_loader`, `train_ann`, etc.). Rerun it after any edits.
 4. Cell 5 instantiates the LENet and LENet_FCL architectures (PyTorch modules).
@@ -50,19 +57,12 @@ If you place the MI3 derivatives elsewhere, adjust the path in Cell 6 (“Loadin
 6. Cells 7–8 train the LENet/LENet_FCL variants. Hyperparameters (epochs, batch size, dropout) are declared at the top of each cell.
 7. Cell 9 evaluates both models, and Cell 10 renders color-coded confusion matrices plus a summary table.
 
-Weights are saved automatically via `torch.save(..., 'lenet_*.pth')` for later inference.
-
-## Project structure
-
-- `pyproject.toml`, `uv.lock` – dependency definitions and lockfile.
-- `MI3_CNN.ipynb` – end-to-end training/evaluation notebook.
-- `Datasets/` – local EEG corpora (not committed).
-- `Docs/` – research notes and reference material.
-- `lenet_ccb_mi3.pth`, `lenet_fcl_mi3.pth` – latest trained weights.
-- `.gitignore` – excludes datasets, virtualenvs, checkpoints, and IDE artifacts.
+Weights are saved automatically via `torch.save(..., 'ModelWeights/lenet_*.pth')` for later inference.
 
 ## Next steps
 
-- Add a scripted entry point (e.g., `train.py`) that mirrors the notebook workflow for headless runs.
-- Log metrics with TensorBoard or Weights & Biases for easier experiment tracking.
-- Extend evaluation to cross-subject MI3 recordings and the BCICIV 2a/2b datasets already downloaded.
+- Add new ML models and try to surpass the 90% accuracy
+- Use transfer learning
+- Use atention mechanisms
+- Use a variable learning ratio depending on the size of the loss
+- For CNNs change the number and size of kernels, temporal and spatial convolution blocks
