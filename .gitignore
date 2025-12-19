@@ -2,13 +2,6 @@
 *.zip
 MatlabToolkits/
 
-
-
-# Large raw datasets
-Datasets/BCICIV_2a_gdf/
-Datasets/BCICIV_2b_gdf/
-
-
 # Python/venv artifacts
 __pycache__/
 *.py[cod]
