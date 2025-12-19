@@ -38,7 +38,6 @@ The repository expects the MI3 BIDS derivative files under `Datasets/MI3`:
 
 - `Datasets/MI3/derivatives/sub-011_eeg.mat` and `sub-011_eeg90hz.mat` – cleaned tensors generated from the bundled MATLAB script.
 - `Datasets/MI3/sourcedata/sub-011/ses-0Y/eeg/*.cnt` – raw CNT acquisitions for the single retained subject (used for re-exporting derivatives).
-- Raw GDF datasets for BCI Competition IV 2a/2b are stored under `Datasets/BCICIV_*` (ignored by git).
 
 - If you place the MI3 derivatives elsewhere, adjust the path in Cell 6 ("Loading the data") of the notebook.
 
