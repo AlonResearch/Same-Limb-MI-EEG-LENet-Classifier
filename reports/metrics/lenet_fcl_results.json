@@ -1,0 +1,32 @@
+{
+  "model_name": "lenet_fcl",
+  "overall_accuracy": 0.6994818652849741,
+  "class_accuracies": {
+    "Rest": 0.8481012658227848,
+    "Elbow": 0.49206349206349204,
+    "Hand": 0.7254901960784313
+  },
+  "confusion_matrix": [
+    [
+      67,
+      3,
+      9
+    ],
+    [
+      4,
+      31,
+      28
+    ],
+    [
+      3,
+      11,
+      37
+    ]
+  ],
+  "class_names": [
+    "Rest",
+    "Elbow",
+    "Hand"
+  ],
+  "num_samples": 193
+}
