@@ -4,7 +4,6 @@ A modular, production-ready PyTorch package for classifying motor imagery EEG si
 
 ## 🎯 Overview
 
-Motor-imagery EEG trials from the MI3 dataset are classified with lightweight LENet variants:
 Motor-imagery EEG trials from the MI3 dataset are classified with the LENet architecture:
 
 - **LENet (CCB)** – Convolutional Classification Block with multi-scale temporal, spatial, and feature fusion layers
