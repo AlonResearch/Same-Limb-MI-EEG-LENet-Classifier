@@ -113,6 +113,17 @@ The setup script will:
 - ✅ Install all dependencies
 - ✅ Verify installation and CUDA
 
+**After setup completes, activate the virtual environment:**
+```powershell
+# Windows
+.\.venv\Scripts\Activate.ps1
+
+# Linux/Mac
+source .venv/bin/activate
+```
+
+**VS Code users:** Select the Python interpreter from `.venv` (Ctrl+Shift+P → "Python: Select Interpreter")
+
 #### Option 2: Manual Setup
 
 1. **Install uv package manager (if not already installed):**
@@ -177,6 +188,27 @@ pip install -e ".[test]"
 
 ### Running the Full Pipeline
 
+**Important:** Always ensure your virtual environment is activated before running commands!
+
+#### Activating the Virtual Environment
+
+**Windows (PowerShell):**
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+**Linux/Mac:**
+```bash
+source .venv/bin/activate
+```
+
+**VS Code:** The virtual environment should be automatically detected. If not:
+1. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac)
+2. Type "Python: Select Interpreter"
+3. Choose the interpreter from `.venv` folder
+
+#### Running the Pipeline
+
 Train both models with default settings (GPU):
 ```bash
 python -m mi3_eeg.main
@@ -193,6 +225,38 @@ python -m mi3_eeg.main --device cpu
 ```
 
 ### Troubleshooting Installation
+
+**Issue: ModuleNotFoundError: No module named 'mi3_eeg'**
+
+This means the virtual environment is not activated. Solution:
+```bash
+# Windows
+.\.venv\Scripts\Activate.ps1
+
+# Linux/Mac
+source .venv/bin/activate
+
+# Verify it's activated (you should see (.venv) in your prompt)
+python -c "import mi3_eeg; print('✅ Package found!')"
+```
+
+**VS Code Users:** If using the integrated terminal:
+1. Open Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
+2. Select "Python: Select Interpreter"
+3. Choose the `.venv` interpreter
+4. Open a new terminal (it will auto-activate the venv)
+
+**Issue: Corrupted virtual environment**
+```bash
+# Remove and recreate
+Remove-Item -Recurse -Force .venv  # Windows PowerShell
+# or
+rm -rf .venv  # Linux/Mac
+
+# Then follow installation steps again
+uv venv
+.venv\Scripts\activate
+```
 
 **Issue: Corrupted virtual environment**
 ```bash
