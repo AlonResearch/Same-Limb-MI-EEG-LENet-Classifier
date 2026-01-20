@@ -5,9 +5,9 @@ A modular, production-ready PyTorch package for classifying motor imagery EEG si
 ## 🎯 Overview
 
 Motor-imagery EEG trials from the MI3 dataset are classified with lightweight LENet variants:
+Motor-imagery EEG trials from the MI3 dataset are classified with the LENet architecture:
 
-- **LENet (CCB)** – Convolutional Classification Block matching the MI2/BCI IV-2a architecture
-- **LENet_FCL** – Fully Connected Layer variant with dynamic sizing for higher-channel recordings
+- **LENet (CCB)** – Convolutional Classification Block with multi-scale temporal, spatial, and feature fusion layers
 
 **Key Features:**
 - ✅ Modular, testable architecture following best practices
@@ -112,6 +112,11 @@ The setup script will:
 - ✅ Install PyTorch with CUDA 12.4
 - ✅ Install all dependencies
 - ✅ Verify installation and CUDA
+
+**If the setup script is interrupted, finish install manually:**
+```bash
+uv pip install -e .
+```
 
 **After setup completes, activate the virtual environment:**
 ```powershell
@@ -374,7 +379,7 @@ Typical performance on MI3 dataset (sub-011):
 | Model      | Overall Acc | Rest Acc | Elbow Acc | Hand Acc |
 |------------|-------------|----------|-----------|----------|
 | LENet (CCB)| ~75-80%     | ~98%     | ~50-60%   | ~65-75%  |
-| LENet_FCL  | ~70-75%     | ~98%     | ~60-70%   | ~35-45%  |
+
 
 *Results vary based on random initialization and data splits.*
 
@@ -412,7 +417,7 @@ Configuration dataclasses for paths, data, training, and model parameters.
 - PyTorch DataLoader creation
 
 ### `model.py`
-- LENet and LENet_FCL architectures
+- LENet architecture with CCB (Convolutional Classification Block)
 - Model factory functions
 - Weight initialization and serialization
 

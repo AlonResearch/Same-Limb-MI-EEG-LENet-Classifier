@@ -74,7 +74,6 @@ def test_package_imports() -> None:
         EarlyStopper,
         EvaluationResults,
         LENet,
-        LENet_FCL,
         ModelConfig,
         Paths,
         TrainingConfig,

@@ -11,7 +11,6 @@ from torch import nn
 from mi3_eeg.config import ModelConfig
 from mi3_eeg.model import (
     LENet,
-    LENet_FCL,
     create_model,
     initialize_weights,
     load_model,
@@ -45,50 +44,6 @@ def test_lenet_forward_pass(sample_tensor_data: tuple[torch.Tensor, torch.Tensor
     assert torch.all(torch.isfinite(output))
 
 
-def test_lenet_fcl_initialization() -> None:
-    """Test LENet_FCL model initialization."""
-    model = LENet_FCL(classes_num=3, channel_count=62, drop_out=0.5)
-    
-    assert isinstance(model, nn.Module)
-    assert model.classes_num == 3
-    assert model.channel_count == 62
-    assert model.drop_out == 0.5
-    assert model.fc is None  # FC layer created on first forward pass
-
-
-def test_lenet_fcl_forward_pass(sample_tensor_data: tuple[torch.Tensor, torch.Tensor]) -> None:
-    """Test LENet_FCL forward pass."""
-    data, _ = sample_tensor_data
-    model = LENet_FCL(classes_num=3, channel_count=62, drop_out=0.5)
-    model.eval()
-    
-    with torch.no_grad():
-        output = model(data)
-    
-    # Output should be (batch_size, classes_num)
-    assert output.shape == (8, 3)
-    
-    # FC layer should be created after first forward pass
-    assert model.fc is not None
-    assert isinstance(model.fc, nn.Linear)
-
-
-def test_lenet_fcl_fc_layer_creation(sample_tensor_data: tuple[torch.Tensor, torch.Tensor]) -> None:
-    """Test that FC layer is created correctly on first forward pass."""
-    data, _ = sample_tensor_data
-    model = LENet_FCL(classes_num=3, channel_count=62, drop_out=0.5)
-    
-    # Before forward pass
-    assert model.fc is None
-    
-    # After forward pass
-    with torch.no_grad():
-        _ = model(data)
-    
-    assert model.fc is not None
-    assert model.fc.out_features == 3
-
-
 def test_initialize_weights() -> None:
     """Test weight initialization function."""
     model = LENet(classes_num=3, channel_count=62, drop_out=0.5)
@@ -115,15 +70,6 @@ def test_create_model_lenet() -> None:
     assert isinstance(model, LENet)
     assert model.classes_num == 3
     assert model.channel_count == 62
-
-
-def test_create_model_lenet_fcl() -> None:
-    """Test model creation with factory function - LENet_FCL."""
-    config = ModelConfig(classes_num=3, channel_count=62, drop_out=0.35)
-    model = create_model("lenet_fcl", config, device="cpu")
-    
-    assert isinstance(model, LENet_FCL)
-    assert model.classes_num == 3
 
 
 def test_create_model_invalid_type() -> None:

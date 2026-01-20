@@ -101,9 +101,9 @@ class DataConfig:
     num_channels: int = 62
     num_classes: int = 3
     class_names: tuple[str, ...] = ("Rest", "Elbow", "Hand")
-    reduce_rest_ratio: float = 1.0
+    reduce_rest_ratio: float = 0.6
     test_size: float = 0.2
-    random_seed: int = 0
+    random_seed: int = 42
 
 
 @dataclass(frozen=True)
