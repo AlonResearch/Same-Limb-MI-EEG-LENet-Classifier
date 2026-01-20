@@ -31,9 +31,9 @@ A modular, production-ready PyTorch package for classifying motor imagery EEG si
 ## 🎯 Overview
 
 Motor-imagery EEG trials from the MI3 dataset are classified with lightweight LENet variants:
+Motor-imagery EEG trials from the MI3 dataset are classified with the LENet architecture:
 
-- **LENet (CCB)** – Convolutional Classification Block matching the MI2/BCI IV-2a architecture
-- **LENet_FCL** – Fully Connected Layer variant with dynamic sizing for higher-channel recordings
+- **LENet (CCB)** – Convolutional Classification Block with multi-scale temporal, spatial, and feature fusion layers
 
 **Key Features:**
 - ✅ Modular, testable architecture following best practices
@@ -41,7 +41,8 @@ Motor-imagery EEG trials from the MI3 dataset are classified with lightweight LE
 - ✅ Comprehensive logging and monitoring
 - ✅ Automated training with early stopping
 - ✅ Rich visualization suite
-- ✅ 60+ unit tests ensuring reliability
+- ✅ GPU/CUDA acceleration support
+- ✅ 71 unit tests ensuring reliability (including CUDA tests)
 
 ## 📁 Project Structure
 
@@ -74,42 +75,243 @@ MI-EEG-Final-ML-Proj/
 └── pyproject.toml            # Project metadata & dependencies
 ```
 
+## 💻 Environment & Requirements
+
+### System Requirements
+- **Python:** 3.11 or 3.12
+- **GPU:** NVIDIA GPU with CUDA 12.4+ (recommended)
+  - GTX 1060 or better for training
+  - 4GB+ VRAM recommended
+- **RAM:** 8GB+ system memory
+- **Storage:** 2GB for dependencies + dataset
+
+### Core Dependencies
+- **PyTorch:** 2.5.1+ with CUDA 12.4 support
+- **NumPy:** 2.4+ for numerical operations
+- **scikit-learn:** 1.8+ for metrics and data splitting
+- **matplotlib:** 3.10+ for visualizations
+- **scipy:** 1.16+ for .mat file loading
+- **pandas:** 2.3+ for data handling
+
+All dependencies are managed through `pyproject.toml` and automatically installed.
+
 ## 🚀 Quick Start
 
-### Installation
+### Prerequisites
 
-1. **Clone the repository:**
+- Python 3.11+
+- CUDA 12.4+ (for GPU acceleration)
+- [uv](https://docs.astral.sh/uv/) package manager (recommended) or pip
+  - **uv** is a fast Python package installer (install with: `pip install uv`)
+  - It's optional but recommended for faster dependency installation
+
+### Installation (Recommended: uv)
+
+#### Option 1: Automated Setup (Easiest)
+
+**Windows (PowerShell):**
+```powershell
+# Install uv if you don't have it
+pip install uv
+
+# Clone and setup
+git clone <repository-url>
+cd MI-EEG-Final-ML-Proj
+.\setup_env.ps1
+```
+
+**Linux/Mac:**
+```bash
+# Install uv if you don't have it
+pip install uv
+
+# Clone and setup
+git clone <repository-url>
+cd MI-EEG-Final-ML-Proj
+chmod +x setup_env.sh
+./setup_env.sh
+```
+
+The setup script will:
+- ✅ Verify uv is installed (or install if missing)
+- ✅ Create virtual environment
+- ✅ Install PyTorch with CUDA 12.4
+- ✅ Install all dependencies
+- ✅ Verify installation and CUDA
+
+**After setup completes, activate the virtual environment:**
+```powershell
+# Windows
+.\.venv\Scripts\Activate.ps1
+
+# Linux/Mac
+source .venv/bin/activate
+```
+
+**VS Code users:** Select the Python interpreter from `.venv` (Ctrl+Shift+P → "Python: Select Interpreter")
+
+#### Option 2: Manual Setup
+
+1. **Install uv package manager (if not already installed):**
+```bash
+pip install uv
+```
+
+2. **Clone the repository:**
 ```bash
 git clone <repository-url>
 cd MI-EEG-Final-ML-Proj
 ```
 
-2. **Install with pip:**
+3. **Create and activate virtual environment:**
 ```bash
-pip install -e .
+uv venv
+.venv\Scripts\activate  # Windows
+# or
+source .venv/bin/activate  # Linux/Mac
 ```
 
-Or with test dependencies:
+4. **Install PyTorch with CUDA support:**
 ```bash
+# For CUDA 12.4
+uv pip install torch --index-url https://download.pytorch.org/whl/cu124
+```
+
+5. **Install the package with dependencies:**
+```bash
+uv pip install -e ".[test]"
+```
+
+6. **Verify installation:**
+```bash
+# Check package
+python -c "import mi3_eeg; print(f'mi3_eeg v{mi3_eeg.__version__}')"
+
+# Check CUDA availability
+python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
+
+# Run tests
+pytest tests/
+```
+
+### Alternative Installation (Standard pip)
+
+If you prefer using pip without uv:
+
+```bash
+# Create virtual environment
+python -m venv .venv
+.venv\Scripts\activate  # Windows (or source .venv/bin/activate on Linux/Mac)
+
+# Install PyTorch with CUDA
+pip install torch --index-url https://download.pytorch.org/whl/cu124
+
+# Install package
 pip install -e ".[test]"
 ```
 
-3. **Verify installation:**
-```bash
-pytest tests/  # Run all tests
-python -c "import mi3_eeg; print(mi3_eeg.__version__)"
-```
+**Note:** Using `uv` is recommended as it's faster and handles dependencies better, but standard `pip` works too.
 
 ### Running the Full Pipeline
 
-Train both models with default settings:
+**Important:** Always ensure your virtual environment is activated before running commands!
+
+#### Activating the Virtual Environment
+
+**Windows (PowerShell):**
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+**Linux/Mac:**
+```bash
+source .venv/bin/activate
+```
+
+**VS Code:** The virtual environment should be automatically detected. If not:
+1. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac)
+2. Type "Python: Select Interpreter"
+3. Choose the interpreter from `.venv` folder
+
+#### Running the Pipeline
+
+Train both models with default settings (GPU):
 ```bash
 python -m mi3_eeg.main
 ```
 
-Train specific model with custom epochs:
+Train specific model with custom settings:
 ```bash
 python -m mi3_eeg.main --models lenet --epochs 500 --device cuda
+```
+
+Use CPU if GPU is not available:
+```bash
+python -m mi3_eeg.main --device cpu
+```
+
+### Troubleshooting Installation
+
+**Issue: ModuleNotFoundError: No module named 'mi3_eeg'**
+
+This means the virtual environment is not activated. Solution:
+```bash
+# Windows
+.\.venv\Scripts\Activate.ps1
+
+# Linux/Mac
+source .venv/bin/activate
+
+# Verify it's activated (you should see (.venv) in your prompt)
+python -c "import mi3_eeg; print('✅ Package found!')"
+```
+
+**VS Code Users:** If using the integrated terminal:
+1. Open Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
+2. Select "Python: Select Interpreter"
+3. Choose the `.venv` interpreter
+4. Open a new terminal (it will auto-activate the venv)
+
+**Issue: Corrupted virtual environment**
+```bash
+# Remove and recreate
+Remove-Item -Recurse -Force .venv  # Windows PowerShell
+# or
+rm -rf .venv  # Linux/Mac
+
+# Then follow installation steps again
+uv venv
+.venv\Scripts\activate
+```
+
+**Issue: Corrupted virtual environment**
+```bash
+# Remove and recreate
+Remove-Item -Recurse -Force .venv  # Windows PowerShell
+# or
+rm -rf .venv  # Linux/Mac
+
+# Then follow installation steps again
+uv venv
+.venv\Scripts\activate
+```
+
+**Issue: PyTorch CPU version installed instead of CUDA**
+```bash
+# Uninstall CPU version
+uv pip uninstall torch
+
+# Install CUDA version
+uv pip install torch --index-url https://download.pytorch.org/whl/cu124
+```
+
+**Issue: CUDA not detected**
+```bash
+# Verify CUDA installation
+nvidia-smi
+
+# Check PyTorch CUDA
+python -c "import torch; print(torch.cuda.is_available(), torch.version.cuda)"
 ```
 
 ### Using in Python
@@ -160,15 +362,23 @@ The project expects BIDS-formatted MI3 data in `Datasets/MI3/`:
 ### Running Tests
 
 ```bash
-# All tests
+# All tests (including CUDA tests if GPU available)
 pytest
 
 # Specific module
 pytest tests/test_model.py -v
 
+# CUDA tests only
+pytest tests/test_cuda.py -v
+
 # With coverage
 pytest --cov=mi3_eeg --cov-report=html
+
+# Show CUDA info
+pytest tests/test_cuda.py::test_cuda_info_display -v -s
 ```
+
+**Note:** CUDA tests automatically skip if GPU is not available, so all tests should pass on any machine.
 
 ### Code Quality
 
@@ -190,7 +400,7 @@ Typical performance on MI3 dataset (sub-011):
 | Model      | Overall Acc | Rest Acc | Elbow Acc | Hand Acc |
 |------------|-------------|----------|-----------|----------|
 | LENet (CCB)| ~75-80%     | ~98%     | ~50-60%   | ~65-75%  |
-| LENet_FCL  | ~70-75%     | ~98%     | ~60-70%   | ~35-45%  |
+
 
 *Results vary based on random initialization and data splits.*
 
@@ -228,7 +438,7 @@ Configuration dataclasses for paths, data, training, and model parameters.
 - PyTorch DataLoader creation
 
 ### `model.py`
-- LENet and LENet_FCL architectures
+- LENet architecture with CCB (Convolutional Classification Block)
 - Model factory functions
 - Weight initialization and serialization
 

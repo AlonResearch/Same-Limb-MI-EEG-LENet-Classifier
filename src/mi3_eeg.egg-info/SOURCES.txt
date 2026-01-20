@@ -1,7 +1,10 @@
 .gitignore
 OpenVScodeHere.bat
 README.md
+REFACTORING_SUMMARY.md
 pyproject.toml
+setup_env.ps1
+setup_env.sh
 uv.lock
 Datasets/MI3/README.md
 Datasets/MI3/dataset_description.json
@@ -18,12 +21,28 @@ Datasets/MI3/code/channel_dict.ced
 Datasets/MI3/derivatives/Readme.MD
 Datasets/MI3/derivatives/sub-011_eeg.mat
 Datasets/MI3/derivatives/sub-011_eeg90hz.mat
+Datasets/MI3/sourcedata/sub-011/ses-01/eeg/sub-011_ses-01_task-motorimagery_eeg.cnt
+Datasets/MI3/sourcedata/sub-011/ses-02/eeg/sub-011_ses-02_task-motorimagery_eeg.cnt
 Docs/EEG 2 Class ML PROJECT.docx
 Docs/EEG 2 Class ML PROJECT.pdf
+Docs/Project_Structure_Requirements_Guideline.md
 Docs/ThesisSlides.pdf
-ModelWeights/lenet_ccb_mi3.pth
-ModelWeights/lenet_fcl_mi3.pth
+Docs/Workshop project.pdf
 Notebooks/MI3_CNN.ipynb
+models/lenet_best.pth
+models/lenet_fcl_best.pth
+models/lenet_fcl_final.pth
+models/lenet_final.pth
+reports/figures/class_accuracies_comparison.png
+reports/figures/lenet_confusion_matrix.png
+reports/figures/lenet_confusion_matrix_custom.png
+reports/figures/lenet_fcl_confusion_matrix.png
+reports/figures/lenet_fcl_confusion_matrix_custom.png
+reports/figures/lenet_fcl_training_curves.png
+reports/figures/lenet_training_curves.png
+reports/figures/overall_accuracy_comparison.png
+reports/metrics/lenet_fcl_results.json
+reports/metrics/lenet_results.json
 src/mi3_eeg/__init__.py
 src/mi3_eeg/config.py
 src/mi3_eeg/dataset.py
@@ -38,7 +57,10 @@ src/mi3_eeg.egg-info/SOURCES.txt
 src/mi3_eeg.egg-info/dependency_links.txt
 src/mi3_eeg.egg-info/requires.txt
 src/mi3_eeg.egg-info/top_level.txt
+tests/README_CUDA_TESTS.md
+tests/conftest.py
 tests/test_config.py
+tests/test_cuda.py
 tests/test_dataset.py
 tests/test_integration.py
 tests/test_logger.py

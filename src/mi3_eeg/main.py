@@ -33,8 +33,8 @@ def main(
     """Run the full ML pipeline.
     
     Args:
-        model_types: List of model types to train (e.g., ['lenet', 'lenet_fcl']).
-                    If None, trains both models.
+        model_types: List of model types to train (only 'lenet' supported).
+                If None, defaults to 'lenet'.
         epochs: Number of training epochs. If None, uses config default.
         device: Device to use ('cuda' or 'cpu'). If None, auto-detects.
     """
@@ -57,7 +57,7 @@ def main(
     
     # Default to training both models
     if model_types is None:
-        model_types = ["lenet", "lenet_fcl"]
+        model_types = ["lenet"]
     
     # === STAGE 1: Data Loading ===
     logger.info("\n" + "=" * 80)
@@ -181,9 +181,9 @@ def cli() -> None:
     parser.add_argument(
         "--models",
         nargs="+",
-        choices=["lenet", "lenet_fcl"],
+        choices=["lenet"],
         default=None,
-        help="Model types to train (default: both)",
+        help="Model type to train (default: lenet)",
     )
     
     parser.add_argument(

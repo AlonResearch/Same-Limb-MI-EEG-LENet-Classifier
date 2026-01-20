@@ -32,7 +32,6 @@ from mi3_eeg.dataset import (
 # Model
 from mi3_eeg.model import (
     LENet,
-    LENet_FCL,
     create_model,
     initialize_weights,
     load_model,
@@ -80,7 +79,6 @@ __all__ = [
     "prepare_data_loaders",
     # Models
     "LENet",
-    "LENet_FCL",
     "create_model",
     "load_model",
     "save_model",
