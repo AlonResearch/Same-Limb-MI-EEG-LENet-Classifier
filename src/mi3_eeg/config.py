@@ -94,7 +94,7 @@ class DataConfig:
         random_seed: Random seed for reproducibility.
     """
 
-    mat_filename: str = "sub-011_eeg90hz.mat"
+    mat_filename: str = "sub-011_eeg.mat"
     subject_id: str = "sub-011"
     sampling_rate: int = 90
     bandpass_filter: tuple[int, int] = (7, 35)
@@ -102,7 +102,7 @@ class DataConfig:
     num_classes: int = 3
     class_names: tuple[str, ...] = ("Rest", "Elbow", "Hand")
     reduce_rest_ratio: float = 0.6
-    test_size: float = 0.2
+    test_size: float = 0.3
     random_seed: int = 42
 
 
@@ -120,11 +120,11 @@ class TrainingConfig:
         device: Device to use for training ('cuda' or 'cpu').
     """
 
-    epochs: int = 40
-    batch_size: int = 64
-    learning_rate: float = 0.01
-    dropout: float = 0.35
-    early_stopping_patience: int = 50
+    epochs: int = 800
+    batch_size: int = 32
+    learning_rate: float = 0.001
+    dropout: float = 0.4
+    early_stopping_patience: int = 200
     early_stopping_min_delta: float = 5e-4
     device: str = "cuda"
 
@@ -141,7 +141,7 @@ class ModelConfig:
 
     channel_count: int = 62
     classes_num: int = 3
-    drop_out: float = 0.35
+    drop_out: float = 0.40
 
 
 # Global constants
