@@ -177,13 +177,13 @@ if [ -d ".venv" ] && [ "$SKIP_VENV_CREATION" != "true" ]; then
     write_info "Virtual environment already exists. Running sync..."
 fi
 
-if SYNC_OUTPUT=$(uv sync 2>&1); then
+if SYNC_OUTPUT=$(uv sync --all-extras 2>&1); then
     if [ -f ".venv/bin/activate" ]; then
         write_success "uv sync completed successfully"
         SETUP_SUCCESS[SyncCompleted]=true
     else
         write_error "uv sync failed or did not create valid venv"
-        write_info "Please run manually: uv sync"
+        write_info "Please run manually: uv sync --all-extras"
         exit 1
     fi
 else
@@ -191,7 +191,7 @@ else
     if [ "$FORCE_REINSTALL" = true ]; then
         write_info "Attempting recovery: removing .venv and retrying..."
         if remove_venv_forcefully; then
-            if uv sync 2>&1; then
+            if uv sync --all-extras 2>&1; then
                 if [ -f ".venv/bin/activate" ]; then
                     write_success "uv sync completed successfully on retry"
                     SETUP_SUCCESS[SyncCompleted]=true
