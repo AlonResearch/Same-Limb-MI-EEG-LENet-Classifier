@@ -1,10 +1,11 @@
 #!/bin/bash
 # Setup script for MI3 EEG Project (Linux/Mac)
 # This script sets up the Python environment with GPU-enabled PyTorch
-# Features: Error handling, validation, recovery options, verbose logging
+# Features: uv sync for fast dependency management, CUDA support verification
 
 # === CONFIGURATION ===
 VERBOSE=false
+FORCE_REINSTALL=false
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Parse command line arguments
@@ -12,6 +13,10 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         -v|--verbose)
             VERBOSE=true
+            shift
+            ;;
+        --force-reinstall)
+            FORCE_REINSTALL=true
             shift
             ;;
         *)
@@ -55,10 +60,9 @@ write_info() {
 # === PROGRESS TRACKING ===
 declare -A SETUP_SUCCESS=(
     [UvInstalled]=false
-    [VenvCreated]=false
+    [SyncCompleted]=false
     [VenvActivated]=false
     [TorchInstalled]=false
-    [PackageInstalled]=false
 )
 
 # === HELPER FUNCTIONS ===
@@ -89,9 +93,63 @@ run_with_output() {
     fi
 }
 
+check_package_installed() {
+    local package_name="$1"
+    
+    # Convert package name for import (e.g., "mi3-eeg" -> "mi3_eeg")
+    local python_name="${package_name//-/_}"
+    
+    # Try direct import - most reliable check
+    if python -c "import $python_name" 2>/dev/null; then
+        return 0
+    fi
+    
+    return 1
+}
+
 # === MAIN SETUP ===
 
 write_section "MI3 EEG Environment Setup"
+
+# --- Check for existing virtual environment ---
+if [ -d ".venv" ] && [ -f ".venv/bin/activate" ]; then
+    echo ""
+    write_info "Virtual environment already exists at: .venv"
+    echo ""
+    echo "Options:"
+    echo "  [1] Reuse and sync (faster)"
+    echo "  [2] Recreate from scratch"
+    echo "  [3] Exit"
+    echo ""
+    
+    read -p "Enter your choice (1-3): " venv_choice
+    
+    case $venv_choice in
+        1)
+            write_info "Reusing existing environment..."
+            SKIP_VENV_CREATION=true
+            ;;
+        2)
+            write_info "Recreating environment from scratch..."
+            if remove_venv_forcefully; then
+                SKIP_VENV_CREATION=false
+            else
+                write_error "Cannot proceed without removing .venv"
+                exit 1
+            fi
+            ;;
+        3)
+            write_info "Exiting setup..."
+            exit 0
+            ;;
+        *)
+            write_error "Invalid choice. Exiting."
+            exit 1
+            ;;
+    esac
+else
+    SKIP_VENV_CREATION=false
+fi
 
 # --- Check for uv ---
 write_step "Checking for uv..."
@@ -113,54 +171,43 @@ else
     fi
 fi
 
-# --- Create virtual environment with automatic fallback ---
-write_step "Creating virtual environment..."
-VENV_CREATION_SUCCESS=false
-
-# Try uv venv first
-write_info "Attempting 'uv venv'..."
-if VENV_OUTPUT=$(uv venv 2>&1); then
-    if [ -f ".venv/bin/activate" ]; then
-        write_success "Virtual environment created successfully"
-        SETUP_SUCCESS[VenvCreated]=true
-        VENV_CREATION_SUCCESS=true
-    else
-        write_error "uv venv: Activate script not found"
-        VENV_OUTPUT="venv created but bin/activate not found"
-    fi
-else
-    write_error "uv venv failed"
+# --- Run uv sync ---
+write_step "Running 'uv sync' (creates venv + installs dependencies)..."
+if [ -d ".venv" ] && [ "$SKIP_VENV_CREATION" != "true" ]; then
+    write_info "Virtual environment already exists. Running sync..."
 fi
 
-# Fallback to uv sync if uv venv failed
-if [ "$VENV_CREATION_SUCCESS" = false ]; then
-    write_error "Falling back to 'uv sync'..."
-    
-    if remove_venv_forcefully; then
-        write_info "Running 'uv sync'..."
-        if SYNC_OUTPUT=$(uv sync 2>&1); then
-            if [ -f ".venv/bin/activate" ]; then
-                write_success "uv sync completed successfully"
-                SETUP_SUCCESS[VenvCreated]=true
-                VENV_CREATION_SUCCESS=true
-            else
-                write_error "uv sync failed or created invalid venv"
-                if [ -n "$SYNC_OUTPUT" ]; then
-                    echo -e "${RED}Error details: $SYNC_OUTPUT${NC}"
+if SYNC_OUTPUT=$(uv sync 2>&1); then
+    if [ -f ".venv/bin/activate" ]; then
+        write_success "uv sync completed successfully"
+        SETUP_SUCCESS[SyncCompleted]=true
+    else
+        write_error "uv sync failed or did not create valid venv"
+        write_info "Please run manually: uv sync"
+        exit 1
+    fi
+else
+    write_error "uv sync failed"
+    if [ "$FORCE_REINSTALL" = true ]; then
+        write_info "Attempting recovery: removing .venv and retrying..."
+        if remove_venv_forcefully; then
+            if uv sync 2>&1; then
+                if [ -f ".venv/bin/activate" ]; then
+                    write_success "uv sync completed successfully on retry"
+                    SETUP_SUCCESS[SyncCompleted]=true
+                else
+                    write_error "uv sync failed on retry"
+                    exit 1
                 fi
-                write_info "Please run manually: uv sync"
+            else
+                write_error "Recovery failed"
                 exit 1
             fi
         else
-            write_error "uv sync failed"
-            if [ -n "$SYNC_OUTPUT" ]; then
-                echo -e "${RED}Error details: $SYNC_OUTPUT${NC}"
-            fi
             exit 1
         fi
     else
-        write_error "Could not remove .venv for fallback"
-        write_info "Please manually run: rm -rf .venv && uv sync"
+        write_info "Please run manually: uv sync"
         exit 1
     fi
 fi
@@ -172,7 +219,7 @@ if [ ! -f ".venv/bin/activate" ]; then
     write_info "Troubleshooting:"
     write_info "  1. Check if .venv exists: [ -d .venv ] && echo 'exists' || echo 'missing'"
     write_info "  2. Try manual activation: source .venv/bin/activate"
-    write_info "  3. Remove and recreate: rm -rf .venv && uv venv"
+    write_info "  3. Remove and recreate: rm -rf .venv && uv sync"
     exit 1
 fi
 
@@ -188,28 +235,38 @@ fi
 write_success "Virtual environment activated: $VIRTUAL_ENV"
 SETUP_SUCCESS[VenvActivated]=true
 
-# --- Install PyTorch with CUDA ---
-write_step "Installing PyTorch with CUDA 12.4..."
-if run_with_output "uv pip install torch --index-url https://download.pytorch.org/whl/cu124 2>&1"; then
-    write_success "PyTorch installed successfully"
-    SETUP_SUCCESS[TorchInstalled]=true
+# --- Install/Update PyTorch with CUDA ---
+write_step "Checking PyTorch installation..."
+if check_package_installed "torch"; then
+    if [ "$FORCE_REINSTALL" = false ]; then
+        write_success "PyTorch already installed (skipping)"
+        SETUP_SUCCESS[TorchInstalled]=true
+    else
+        write_info "Force reinstall requested. Uninstalling existing PyTorch..."
+        pip uninstall torch -y 2>&1 | grep -v "^Successfully uninstalled" > /dev/null
+        
+        write_step "Installing PyTorch with CUDA 12.4..."
+        if run_with_output "pip install torch --index-url https://download.pytorch.org/whl/cu124 2>&1"; then
+            write_success "PyTorch installed successfully"
+            SETUP_SUCCESS[TorchInstalled]=true
+        else
+            write_error "PyTorch installation failed"
+            write_info "PyTorch installation failed, but base environment is ready."
+            write_info "You can retry with: pip install torch --index-url https://download.pytorch.org/whl/cu124"
+            exit 1
+        fi
+    fi
 else
-    write_error "PyTorch installation failed"
-    write_info "Partial progress saved: PyTorch installation failed, but venv is intact."
-    write_info "You can retry with: uv pip install torch --index-url https://download.pytorch.org/whl/cu124"
-    exit 1
-fi
-
-# --- Install MI3-EEG package ---
-write_step "Installing MI3-EEG package with dependencies..."
-if run_with_output "uv pip install -e '.[test]' 2>&1"; then
-    write_success "MI3-EEG package installed successfully"
-    SETUP_SUCCESS[PackageInstalled]=true
-else
-    write_error "Package installation failed"
-    write_info "Partial progress saved: PyTorch is installed, but package installation failed."
-    write_info "You can retry with: uv pip install -e '.[test]'"
-    exit 1
+    write_step "Installing PyTorch with CUDA 12.4..."
+    if run_with_output "pip install torch --index-url https://download.pytorch.org/whl/cu124 2>&1"; then
+        write_success "PyTorch installed successfully"
+        SETUP_SUCCESS[TorchInstalled]=true
+    else
+        write_error "PyTorch installation failed"
+        write_info "PyTorch installation failed, but base environment is ready."
+        write_info "You can retry with: pip install torch --index-url https://download.pytorch.org/whl/cu124"
+        exit 1
+    fi
 fi
 
 # === VERIFICATION ===
@@ -239,7 +296,7 @@ else:
 " 2>&1 || ALL_VERIFICATIONS_PASS=false
 
 # === FINAL STATUS ===
-if [ "$ALL_VERIFICATIONS_PASS" = true ] && [ "${SETUP_SUCCESS[PackageInstalled]}" = true ]; then
+if [ "$ALL_VERIFICATIONS_PASS" = true ] && [ "${SETUP_SUCCESS[SyncCompleted]}" = true ] && [ "${SETUP_SUCCESS[TorchInstalled]}" = true ]; then
     write_section "Setup Complete! ✅"
     echo ""
     write_success "All components installed and verified!"
@@ -256,10 +313,9 @@ else
     echo ""
     echo "Partial Progress:"
     echo "  Uv installed:        ${SETUP_SUCCESS[UvInstalled]}"
-    echo "  Venv created:        ${SETUP_SUCCESS[VenvCreated]}"
+    echo "  Sync completed:      ${SETUP_SUCCESS[SyncCompleted]}"
     echo "  Venv activated:      ${SETUP_SUCCESS[VenvActivated]}"
     echo "  PyTorch installed:   ${SETUP_SUCCESS[TorchInstalled]}"
-    echo "  Package installed:   ${SETUP_SUCCESS[PackageInstalled]}"
     echo ""
     echo "To retry:"
     echo "  1. Fix the issue above"
