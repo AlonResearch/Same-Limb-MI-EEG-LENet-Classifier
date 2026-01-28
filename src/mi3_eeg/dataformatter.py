@@ -1,8 +1,7 @@
-"""Data formatter module for converting raw MI3 data to model-ready format.
+"""Convert raw MI3 .mat files to the standardized model-ready format.
 
-This module handles conversion of raw .mat files from the Nature paper format
-(task_data, task_label, rest_data) to the standardized format expected by the model
-(all_data, all_label).
+Input (raw .mat keys): task_data, task_label, rest_data
+Output (standardized keys): all_data, all_label, sampling_rate, source_file
 """
 
 from __future__ import annotations
@@ -24,32 +23,21 @@ def convert_raw_format(
     task_label: NDArray,
     rest_data: NDArray,
 ) -> tuple[NDArray, NDArray, int]:
-    """Convert raw MI3 format to standardized all_data/all_label format.
-    
-    Converts from Nature paper format:
-    - task_data: (sessions, trials_per_session, channels, timepoints) = (15, 40, 62, 800)
-    - task_label: (sessions, trials_per_session) = (15, 40) with values [1, 2]
-    - rest_data: (trials, channels, timepoints) = (300, 62, 800)
-    
-    To standardized format:
-    - all_data: (total_trials, channels, timepoints) = (900, 62, 800)
-    - all_label: (total_trials,) with values [0, 1, 2]
-    
-    Label mapping:
-    - Rest: 0 (created for rest_data)
-    - Elbow: 1 (from task_label)
-    - Hand: 2 (from task_label)
-    
+    """Normalize raw MI3 arrays into standardized arrays.
+
     Args:
-        task_data: Task data with shape (sessions, trials_per_session, channels, timepoints).
-        task_label: Task labels with shape (sessions, trials_per_session).
-        rest_data: Rest data with shape (trials, channels, timepoints).
-    
+        task_data: Raw task data, shape (sessions, trials_per_session, channels, timepoints).
+        task_label: Raw task labels, shape (sessions, trials_per_session), values {1, 2}.
+        rest_data: Raw rest data, shape (trials, channels, timepoints).
+
     Returns:
-        Tuple of (all_data, all_label, sampling_rate):
-        - all_data: Combined data array (900, 62, timepoints)
-        - all_label: Combined labels (900, 1) with values [0, 1, 2]
-        - sampling_rate: Inferred sampling rate in Hz
+        Tuple (all_data, all_label, sampling_rate):
+        - all_data: shape (total_trials, channels, timepoints)
+        - all_label: shape (total_trials, 1), values {0, 1, 2}
+        - sampling_rate: inferred from timepoints (4-second trials)
+
+    Raises:
+        ValueError: If input arrays do not have the expected rank.
     """
     logger.info("Converting raw format to standardized format...")
     
@@ -144,21 +132,21 @@ def format_and_save(
     output_dir: Path | None = None,
     subject_id: str | None = None,
 ) -> Path:
-    """Format raw MI3 .mat file and save in standardized format.
-    
+    """Convert a raw .mat file and save it as standardized output.
+
     Args:
-        input_path: Path to raw .mat file with task_data/task_label/rest_data.
-        output_path: Optional full output path. If None, generates filename in output_dir.
-        output_dir: Optional output directory. If None, uses input_path parent directory.
-        subject_id: Optional subject ID for output filename (e.g., 'sub-017').
-    
+        input_path: Raw .mat file path containing task_data/task_label/rest_data.
+        output_path: Optional full output path. If provided, overrides output_dir.
+        output_dir: Optional directory to place formatted file.
+        subject_id: Optional subject ID for naming (e.g., "sub-017").
+
     Returns:
-        Path to the saved formatted .mat file.
-    
+        Path to the formatted .mat file.
+
     Raises:
-        FileNotFoundError: If input file doesn't exist.
-        KeyError: If required keys missing from input file.
-        ValueError: If data format is invalid.
+        FileNotFoundError: If input_path does not exist.
+        KeyError: If required keys are missing in the .mat file.
+        ValueError: If input arrays are malformed.
     """
     if not input_path.exists():
         msg = f"Input file not found: {input_path}"
@@ -232,16 +220,17 @@ def format_and_save(
 
 
 def detect_format(mat_data: dict) -> str:
-    """Detect the format of a .mat file.
-    
+    """Identify .mat structure by required keys.
+
     Args:
-        mat_data: Dictionary loaded from .mat file.
-    
+        mat_data: Dict returned by scipy.io.loadmat.
+
     Returns:
-        'standardized' if has all_data/all_label, 'raw' if has task_data/etc.
-    
+        "standardized" if keys include all_data/all_label,
+        "raw" if keys include task_data/task_label/rest_data.
+
     Raises:
-        ValueError: If format cannot be determined.
+        ValueError: If neither format can be detected.
     """
     has_standardized = 'all_data' in mat_data and 'all_label' in mat_data
     has_raw = all(key in mat_data for key in ['task_data', 'task_label', 'rest_data'])

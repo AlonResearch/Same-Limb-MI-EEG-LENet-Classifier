@@ -1,8 +1,8 @@
-"""Dataset loading and preprocessing for MI3 EEG data.
+"""Load MI3 EEG datasets and build PyTorch DataLoaders.
 
-This module handles loading EEG data from BIDS-formatted MI3 dataset,
-preprocessing, and creating PyTorch DataLoaders. Supports both standardized
-format (all_data/all_label) and raw format (task_data/task_label/rest_data).
+Supported .mat formats:
+- standardized: all_data, all_label
+- raw: task_data, task_label, rest_data (auto-converted)
 """
 
 from __future__ import annotations
@@ -26,14 +26,14 @@ if TYPE_CHECKING:
 @dataclass(frozen=True)
 class EEGDataBundle:
     """Container for EEG data and metadata.
-    
+
     Attributes:
-        data: EEG data array, shape (samples, channels, timepoints).
-        labels: Class labels, shape (samples, 1).
+        data: EEG array, shape (samples, channels, timepoints).
+        labels: Label array, shape (samples, 1) or (samples,).
         channel_count: Number of EEG channels.
-        num_classes: Number of motor imagery classes.
+        num_classes: Number of classes.
         sample_rate: Sampling rate in Hz.
-        class_distribution: Dictionary mapping class names to counts.
+        class_distribution: Dict with counts for Rest/Elbow/Hand.
     """
 
     data: np.ndarray
@@ -51,27 +51,21 @@ def load_mat_from_derivatives(
     expected_sampling_rate: int | None = None,
     validate_timepoints: bool = True,
 ) -> EEGDataBundle:
-    """Load preprocessed EEG data from BIDS derivatives folder.
-    
-    Supports two formats:
-    1. Standardized format: 'all_data' and 'all_label' keys
-    2. Raw format: 'task_data', 'task_label', and 'rest_data' keys
-       (automatically converted to standardized format)
-    
+    """Load a .mat file and return a normalized EEGDataBundle.
+
     Args:
-        mat_path: Path to .mat file in Datasets/MI3/derivatives/.
-        reduce_rest_ratio: Fraction of 'Rest' samples to keep (1.0 = all).
-        random_seed: Random seed for reproducibility. If None, uses random.
-        expected_sampling_rate: Expected sampling rate for validation. If None, no validation.
-        validate_timepoints: Whether to validate timepoints against expected_sampling_rate.
-    
+        mat_path: Path to .mat file (raw or standardized).
+        reduce_rest_ratio: Fraction of Rest samples to keep (1.0 = keep all).
+        random_seed: Seed for reproducible balancing.
+        expected_sampling_rate: Expected Hz for 4-second trials.
+        validate_timepoints: If True, warn when timepoints != 4s * sampling_rate.
+
     Returns:
-        EEGDataBundle with loaded and balanced data.
-    
+        EEGDataBundle with data/labels ready for training.
+
     Raises:
-        FileNotFoundError: If .mat file doesn't exist.
-        KeyError: If required keys missing from .mat file.
-        ValueError: If timepoint validation fails.
+        FileNotFoundError: If mat_path does not exist.
+        KeyError: If required keys are missing.
     """
     if not mat_path.exists():
         msg = (
@@ -196,13 +190,13 @@ def load_mat_from_derivatives(
 
 
 def _calculate_class_distribution(labels: np.ndarray) -> dict[str, int]:
-    """Calculate class distribution from labels.
-    
+    """Return counts for Rest/Elbow/Hand from a label array.
+
     Args:
-        labels: Label array.
-    
+        labels: Label array, shape (samples,) or (samples, 1).
+
     Returns:
-        Dictionary mapping class names to counts.
+        Dict with keys: Rest, Elbow, Hand.
     """
     flat_labels = labels.flatten()
     return {
@@ -218,16 +212,16 @@ def _balance_rest_class(
     keep_ratio: float,
     random_seed: int | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Reduce Rest class samples to balance dataset.
-    
+    """Downsample Rest class to a target ratio.
+
     Args:
-        data: EEG data array.
-        labels: Label array.
+        data: EEG array, shape (samples, channels, timepoints).
+        labels: Label array, shape (samples,) or (samples, 1).
         keep_ratio: Fraction of Rest samples to keep.
-        random_seed: Random seed for reproducibility.
-    
+        random_seed: Seed for reproducible selection.
+
     Returns:
-        Tuple of (balanced_data, balanced_labels).
+        (balanced_data, balanced_labels)
     """
     if random_seed is not None:
         np.random.seed(random_seed)
@@ -262,23 +256,18 @@ def create_data_loader(
     drop_last: bool = False,
     device: str = "cuda",
 ) -> DataLoader:
-    """Create PyTorch DataLoader from EEG data.
-    
-    This function preprocesses the data to fit the model input format:
-    - Converts to PyTorch tensors
-    - Adds channel dimension for Conv2D: (batch, 1, channels, timepoints)
-    - Moves data to specified device
-    
+    """Create a PyTorch DataLoader from numpy EEG arrays.
+
     Args:
-        data: EEG data, shape (samples, channels, timepoints).
-        labels: Class labels, shape (samples, 1) or (samples,).
-        batch_size: Batch size for DataLoader.
-        shuffle: Whether to shuffle data.
+        data: EEG array, shape (samples, channels, timepoints).
+        labels: Label array, shape (samples,) or (samples, 1).
+        batch_size: Batch size.
+        shuffle: Whether to shuffle samples.
         drop_last: Whether to drop last incomplete batch.
-        device: Device to place tensors on ('cuda' or 'cpu').
-    
+        device: Target device for tensors ("cuda" or "cpu").
+
     Returns:
-        PyTorch DataLoader with preprocessed data.
+        DataLoader yielding (batch, 1, channels, timepoints) and labels.
     """
     # Convert labels to flat LongTensor
     label_tensor = torch.LongTensor(labels.flatten()).to(device)
@@ -317,14 +306,14 @@ def load_dataset_from_config(
     config: DataConfig | None = None,
     paths: Paths | None = None,
 ) -> EEGDataBundle:
-    """Load dataset using configuration objects.
-    
+    """Load a dataset using DataConfig and Paths.
+
     Args:
-        config: DataConfig instance. If None, uses default.
-        paths: Paths instance. If None, creates from current location.
-    
+        config: DataConfig instance (uses defaults if None).
+        paths: Paths instance (auto-derived if None).
+
     Returns:
-        EEGDataBundle with loaded data.
+        EEGDataBundle with normalized data/labels.
     """
     if config is None:
         config = DataConfig()
@@ -347,15 +336,15 @@ def prepare_data_loaders(
     config: DataConfig,
     device: str = "cuda",
 ) -> tuple[DataLoader, DataLoader]:
-    """Prepare train and test DataLoaders from data bundle.
-    
+    """Split EEGDataBundle and return train/test DataLoaders.
+
     Args:
-        data_bundle: EEGDataBundle with data and labels.
-        config: DataConfig with split parameters.
-        device: Device to place tensors on.
-    
+        data_bundle: Loaded EEGDataBundle.
+        config: DataConfig containing test_size and random_seed.
+        device: Device for tensors ("cuda" or "cpu").
+
     Returns:
-        Tuple of (train_loader, test_loader).
+        (train_loader, test_loader)
     """
     from sklearn.model_selection import train_test_split
     

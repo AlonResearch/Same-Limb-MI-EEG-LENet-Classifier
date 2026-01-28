@@ -1,7 +1,10 @@
-"""Conversion script for raw MI3 data files.
+"""Convert a single raw MI3 .mat file into standardized format.
 
-This script converts raw MI3 .mat files (task_data/task_label/rest_data format)
-to standardized format (all_data/all_label) with proper naming convention.
+Input (raw .mat keys): task_data, task_label, rest_data
+Output (standardized keys): all_data, all_label, sampling_rate, source_file
+
+Terminal usage example:
+    python -m mi3_eeg.convert_subject "G:/My Drive/ML/dataset/sub-017_task-motorimagery_eeg.mat" sub-017
 """
 
 from pathlib import Path
@@ -12,7 +15,12 @@ from mi3_eeg.logger import setup_logger, logger
 
 
 def main():
-    """Main formatting function."""
+    """CLI entrypoint.
+
+    Args (CLI):
+        argv[1]: input .mat path (raw format)
+        argv[2]: optional subject_id (e.g., sub-017)
+    """
     # Setup logging
     setup_logger()
     
