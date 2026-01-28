@@ -490,15 +490,53 @@ print(f"Accuracy: {results.overall_accuracy * 100:.2f}%")
 
 ## 📊 Dataset
 
+### MI3 Dataset Setup
+
+**IMPORTANT:** The preprocessed dataset files are not included in this repository due to their large size (several GB). You must download them separately.
+
+#### Downloading the Dataset
+
+1. **Access the MI3 Dataset:**
+   - Dataset paper: [Motor Imagery Dataset of Same Limb during Motor Execution and Motor Imagery](https://doi.org/10.1038/s41597-023-02020-0)
+   - OpenNeuro: [https://openneuro.org/datasets/ds004148](https://openneuro.org/datasets/ds004148)
+   - Direct download of preprocessed files is available from the dataset source
+
+2. **Download preprocessed derivatives:**
+   - Navigate to the dataset's `derivatives/` folder
+   - Download the preprocessed `.mat` files (200Hz sampling rate):
+     - `sub-001_eeg200hz.mat` through `sub-025_eeg200hz.mat`
+   - Optional: Download `sub-011_eeg.mat` and `sub-011_eeg90hz.mat` for testing
+
+3. **Place files in your local repository:**
+   ```bash
+   # Create the derivatives directory if it doesn't exist
+   mkdir -p Datasets/MI3/derivatives
+   
+   # Copy downloaded .mat files to:
+   Datasets/MI3/derivatives/
+   ```
+
+4. **Verify the structure:**
+   ```
+   Datasets/MI3/derivatives/
+   ├── sub-001_eeg200hz.mat
+   ├── sub-002_eeg200hz.mat
+   ├── ...
+   ├── sub-025_eeg200hz.mat
+   └── sub-011_eeg90hz.mat (example file, included in repo)
+   ```
+
+**Note:** A small example file (`sub-011_eeg90hz.mat`) is included in the repository for testing purposes. This file contains 90Hz downsampled, bandpass filtered (7-35Hz) data with shape (965 samples, 62 channels, 360 timepoints) and classes: Rest (0), Elbow (1), Hand (2).
+
 ### MI3 Dataset Structure (BIDS Format)
 
-The project expects BIDS-formatted MI3 data in `Datasets/MI3/` and only use the already preprocessed data from the daset `Datasets/MI3/derivatives`:
+The project expects BIDS-formatted MI3 data in `Datasets/MI3/`:
 
-- **derivatives/** – Preprocessed MATLAB .mat files
-  - `sub-011_eeg90hz.mat` – 90Hz downsampled, bandpass filtered (7-35Hz) example data for github test
-  - Shape: (965 samples, 62 channels, 360 timepoints)
+- **derivatives/** – Preprocessed MATLAB .mat files (200Hz sampling)
+  - `sub-XXX_eeg200hz.mat` – Preprocessed EEG data files
+  - Shape: (~900 samples, 62 channels, 800 timepoints)
   - Classes: Rest (0), Elbow (1), Hand (2)
-
+- **sourcedata/** – Raw .cnt files (optional, not required for training)
 
 ### Data Processing Pipeline
 
