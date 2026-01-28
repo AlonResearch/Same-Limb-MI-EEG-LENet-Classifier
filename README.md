@@ -492,20 +492,18 @@ print(f"Accuracy: {results.overall_accuracy * 100:.2f}%")
 
 ### MI3 Dataset Structure (BIDS Format)
 
-The project expects BIDS-formatted MI3 data in `Datasets/MI3/`:
+The project expects BIDS-formatted MI3 data in `Datasets/MI3/` and only use the already preprocessed data from the daset `Datasets/MI3/derivatives`:
 
-- **sourcedata/** – Raw CNT acquisitions (immutable)
 - **derivatives/** – Preprocessed MATLAB .mat files
-  - `sub-011_eeg90hz.mat` – 90Hz downsampled, bandpass filtered (7-35Hz)
+  - `sub-011_eeg90hz.mat` – 90Hz downsampled, bandpass filtered (7-35Hz) example data for github test
   - Shape: (965 samples, 62 channels, 360 timepoints)
   - Classes: Rest (0), Elbow (1), Hand (2)
-- **code/** – MATLAB preprocessing scripts (`MI3_process.m`)
+
 
 ### Data Processing Pipeline
 
-1. Raw CNT files → MATLAB preprocessing → .mat files (derivatives)
-2. Python loads from derivatives → Class balancing → PyTorch tensors
-3. Train/test split (80/20) → DataLoaders → Model training
+1. Python loads from derivatives → Class balancing → PyTorch tensors
+2. Train/test split (80/20) → DataLoaders → Model training
 
 ## 🧪 Development
 
