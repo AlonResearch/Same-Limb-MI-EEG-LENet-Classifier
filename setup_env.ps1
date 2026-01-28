@@ -119,7 +119,7 @@ if (Test-Path .\.venv) {
 }
 
 try {
-    & uv sync --all-extras --index-url https://download.pytorch.org/whl/cu124 2>&1 | Write-Verbose
+    & uv sync --all-extras 2>&1 | Write-Verbose
     
     if ($LASTEXITCODE -eq 0 -and (Test-Path .\.venv\Scripts\Activate.ps1)) {
         Write-Success "uv sync completed successfully"
@@ -133,7 +133,7 @@ try {
         Write-Host "Attempting recovery: removing .venv and retrying..." -ForegroundColor Yellow
         if (Remove-VenvForcefully) {
             try {
-                & uv sync --all-extras --index-url https://download.pytorch.org/whl/cu124 2>&1 | Write-Verbose
+                & uv sync --all-extras 2>&1 | Write-Verbose
                 if ($LASTEXITCODE -eq 0 -and (Test-Path .\.venv\Scripts\Activate.ps1)) {
                     Write-Success "uv sync completed successfully on retry"
                     $script:PartialSuccess.SyncCompleted = $true
@@ -435,7 +435,7 @@ if ($skipVenvCreation -eq $true) {
         try {
             if (Remove-VenvForcefully) {
                 Write-Host "Running 'uv sync --all-extras'..." -ForegroundColor Yellow
-                $syncOutput = & uv sync --all-extras --index-url https://download.pytorch.org/whl/cu124 2>&1
+$syncOutput = & uv sync --all-extras 2>&1
                 
                 if ($LASTEXITCODE -eq 0 -and (Test-Path .\.venv\Scripts\Activate.ps1)) {
                     Write-Success "uv sync completed successfully"
