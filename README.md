@@ -6,7 +6,7 @@ A modular, production-ready PyTorch package for classifying motor imagery EEG si
 
 Motor-imagery EEG trials from the MI3 dataset are classified with the LENet architecture:
 
-- **LENet (CCB)** – Convolutional Classification Block with multi-scale temporal, spatial, and feature fusion layers
+- **LENet** – A CNN that is lightweight and efficient by using Convolutional Classification Block with multi-scale temporal, spatial, and feature fusion layers
 
 **Key Features:**
 - ✅ Modular, testable architecture following best practices
@@ -75,14 +75,16 @@ All dependencies are managed through `pyproject.toml` and automatically installe
 - Python 3.11+
 - CUDA 12.4+ (for GPU acceleration)
 - [uv](https://docs.astral.sh/uv/) package manager (recommended) or pip
-  - **uv** is a fast Python package installer (install with: `pip install uv`)
+  - **uv** is a fast Python package installer
   - It's optional but recommended for faster dependency installation
 
 ### Installation (Recommended: uv)
 
 #### Option 1: Automated Setup (Easiest)
 
-**Windows (PowerShell):**
+<details>
+<summary><b>🪟 Windows (PowerShell)</b></summary>
+
 ```powershell
 # Install uv if you don't have it
 pip install uv
@@ -93,7 +95,30 @@ cd MI-EEG-Final-ML-Proj
 .\setup_env.ps1
 ```
 
-**Linux/Mac:**
+The setup script will:
+- ✅ Verify uv is installed (or install if missing)
+- ✅ Create virtual environment
+- ✅ Install PyTorch with CUDA 12.4
+- ✅ Install all dependencies
+- ✅ Verify installation and CUDA
+
+**After setup completes, activate the virtual environment:**
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+**If the setup script is interrupted, finish install manually:**
+```powershell
+uv pip install -e .
+```
+
+**VS Code users:** Select the Python interpreter from `.venv` (Ctrl+Shift+P → "Python: Select Interpreter")
+
+</details>
+
+<details>
+<summary><b>🐧 Linux/Mac</b></summary>
+
 ```bash
 # Install uv if you don't have it
 pip install uv
@@ -112,28 +137,112 @@ The setup script will:
 - ✅ Install all dependencies
 - ✅ Verify installation and CUDA
 
+**After setup completes, activate the virtual environment:**
+```bash
+source .venv/bin/activate
+```
+
 **If the setup script is interrupted, finish install manually:**
 ```bash
 uv pip install -e .
 ```
 
-**After setup completes, activate the virtual environment:**
-```powershell
-# Windows
-.\.venv\Scripts\Activate.ps1
+**VS Code users:** Select the Python interpreter from `.venv` (Cmd+Shift+P → "Python: Select Interpreter")
 
-# Linux/Mac
-source .venv/bin/activate
+</details>
+
+<details>
+<summary><b>❌ Troubleshooting: pip install uv fails</b></summary>
+
+If you encounter errors when running `pip install uv`, try these solutions:
+
+**Solution 1: Upgrade pip first**
+```bash
+python -m pip install --upgrade pip
+pip install uv
 ```
 
-**VS Code users:** Select the Python interpreter from `.venv` (Ctrl+Shift+P → "Python: Select Interpreter")
+**Solution 2: Use python -m pip explicitly**
+```bash
+python -m pip install --user uv
+```
+
+**Solution 3: If you have permission issues (especially on Linux/Mac)**
+```bash
+# Install for current user only
+pip install --user uv
+
+# Then add to PATH (Linux/Mac)
+export PATH="$HOME/.local/bin:$PATH"
+uv --version
+```
+
+**Solution 4: Use uv bootstrap (direct installation)**
+If all else fails, download uv directly from: https://github.com/astral-sh/uv/releases
+- Extract to a folder in your PATH or run directly with the full path
+- Verify: `uv --version`
+
+**If still having issues:**
+You can proceed with **Option 2 (Manual Setup)** or **Alternative Installation (Standard pip)** below without uv.
+
+</details>
 
 #### Option 2: Manual Setup
 
-1. **Install uv package manager (if not already installed):**
+<details>
+<summary><b>🪟 Windows (PowerShell)</b></summary>
+
+1. **Install uv package manager (optional):**
+```powershell
+pip install uv
+```
+If this fails, see the troubleshooting section above.
+
+2. **Clone the repository:**
+```powershell
+git clone <repository-url>
+cd MI-EEG-Final-ML-Proj
+```
+
+3. **Create and activate virtual environment:**
+```powershell
+uv venv
+.\.venv\Scripts\Activate.ps1
+```
+
+4. **Install PyTorch with CUDA support:**
+```powershell
+# For CUDA 12.4
+uv pip install torch --index-url https://download.pytorch.org/whl/cu124
+```
+
+5. **Install the package with dependencies:**
+```powershell
+uv pip install -e ".[test]"
+```
+
+6. **Verify installation:**
+```powershell
+# Check package
+python -c "import mi3_eeg; print(f'mi3_eeg v{mi3_eeg.__version__}')"
+
+# Check CUDA availability
+python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
+
+# Run tests
+pytest tests/
+```
+
+</details>
+
+<details>
+<summary><b>🐧 Linux/Mac</b></summary>
+
+1. **Install uv package manager (optional):**
 ```bash
 pip install uv
 ```
+If this fails, see the troubleshooting section above.
 
 2. **Clone the repository:**
 ```bash
@@ -144,9 +253,7 @@ cd MI-EEG-Final-ML-Proj
 3. **Create and activate virtual environment:**
 ```bash
 uv venv
-.venv\Scripts\activate  # Windows
-# or
-source .venv/bin/activate  # Linux/Mac
+source .venv/bin/activate
 ```
 
 4. **Install PyTorch with CUDA support:**
@@ -172,14 +279,19 @@ python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
 pytest tests/
 ```
 
+</details>
+
 ### Alternative Installation (Standard pip)
 
-If you prefer using pip without uv:
+<details>
+<summary><b>🪟 Windows (PowerShell)</b></summary>
 
-```bash
+If you prefer using pip without uv or if uv installation fails:
+
+```powershell
 # Create virtual environment
 python -m venv .venv
-.venv\Scripts\activate  # Windows (or source .venv/bin/activate on Linux/Mac)
+.\.venv\Scripts\Activate.ps1
 
 # Install PyTorch with CUDA
 pip install torch --index-url https://download.pytorch.org/whl/cu124
@@ -190,26 +302,64 @@ pip install -e ".[test]"
 
 **Note:** Using `uv` is recommended as it's faster and handles dependencies better, but standard `pip` works too.
 
+</details>
+
+<details>
+<summary><b>🐧 Linux/Mac</b></summary>
+
+If you prefer using pip without uv or if uv installation fails:
+
+```bash
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate
+
+# Install PyTorch with CUDA
+pip install torch --index-url https://download.pytorch.org/whl/cu124
+
+# Install package
+pip install -e ".[test]"
+```
+
+**Note:** Using `uv` is recommended as it's faster and handles dependencies better, but standard `pip` works too.
+
+</details>
+
 ### Running the Full Pipeline
 
 **Important:** Always ensure your virtual environment is activated before running commands!
 
 #### Activating the Virtual Environment
 
-**Windows (PowerShell):**
+<details>
+<summary><b>🪟 Windows (PowerShell)</b></summary>
+
 ```powershell
 .\.venv\Scripts\Activate.ps1
 ```
 
-**Linux/Mac:**
+**VS Code:** The virtual environment should be automatically detected. If not:
+1. Press `Ctrl+Shift+P`
+2. Type "Python: Select Interpreter"
+3. Choose the interpreter from `.venv` folder
+4. Open a new terminal (it will auto-activate)
+
+</details>
+
+<details>
+<summary><b>🐧 Linux/Mac</b></summary>
+
 ```bash
 source .venv/bin/activate
 ```
 
 **VS Code:** The virtual environment should be automatically detected. If not:
-1. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac)
+1. Press `Cmd+Shift+P`
 2. Type "Python: Select Interpreter"
 3. Choose the interpreter from `.venv` folder
+4. Open a new terminal (it will auto-activate)
+
+</details>
 
 #### Running the Pipeline
 
@@ -230,7 +380,8 @@ python -m mi3_eeg.main --device cpu
 
 ### Troubleshooting Installation
 
-**Issue: ModuleNotFoundError: No module named 'mi3_eeg'**
+<details>
+<summary><b>❌ Issue: ModuleNotFoundError: No module named 'mi3_eeg'</b></summary>
 
 This means the virtual environment is not activated. Solution:
 ```bash
@@ -250,31 +401,32 @@ python -c "import mi3_eeg; print('✅ Package found!')"
 3. Choose the `.venv` interpreter
 4. Open a new terminal (it will auto-activate the venv)
 
-**Issue: Corrupted virtual environment**
+</details>
+
+<details>
+<summary><b>❌ Issue: Corrupted virtual environment</b></summary>
+
+Remove and recreate the virtual environment:
 ```bash
-# Remove and recreate
-Remove-Item -Recurse -Force .venv  # Windows PowerShell
-# or
-rm -rf .venv  # Linux/Mac
+# Windows PowerShell
+Remove-Item -Recurse -Force .venv
+
+# Linux/Mac
+rm -rf .venv
 
 # Then follow installation steps again
 uv venv
-.venv\Scripts\activate
-```
-
-**Issue: Corrupted virtual environment**
-```bash
-# Remove and recreate
-Remove-Item -Recurse -Force .venv  # Windows PowerShell
+.venv\Scripts\activate  # Windows
 # or
-rm -rf .venv  # Linux/Mac
-
-# Then follow installation steps again
-uv venv
-.venv\Scripts\activate
+source .venv/bin/activate  # Linux/Mac
 ```
 
-**Issue: PyTorch CPU version installed instead of CUDA**
+</details>
+
+<details>
+<summary><b>❌ Issue: PyTorch CPU version installed instead of CUDA</b></summary>
+
+Uninstall and reinstall the CUDA version:
 ```bash
 # Uninstall CPU version
 uv pip uninstall torch
@@ -283,14 +435,29 @@ uv pip uninstall torch
 uv pip install torch --index-url https://download.pytorch.org/whl/cu124
 ```
 
-**Issue: CUDA not detected**
+</details>
+
+<details>
+<summary><b>❌ Issue: CUDA not detected despite installation</b></summary>
+
+Verify CUDA installation and configuration:
 ```bash
-# Verify CUDA installation
+# Verify CUDA is installed on system
 nvidia-smi
 
-# Check PyTorch CUDA
-python -c "import torch; print(torch.cuda.is_available(), torch.version.cuda)"
+# Check PyTorch CUDA support
+python -c "import torch; print(f'CUDA Available: {torch.cuda.is_available()}'); print(f'CUDA Version: {torch.version.cuda}')"
+
+# If CUDA not detected:
+# 1. Reinstall torch with correct CUDA index
+uv pip uninstall torch
+uv pip install torch --index-url https://download.pytorch.org/whl/cu124
+
+# 2. Verify NVIDIA drivers are up-to-date
+nvidia-smi  # Check driver version at top
 ```
+
+</details>
 
 ### Using in Python
 
@@ -440,23 +607,6 @@ Configuration dataclasses for paths, data, training, and model parameters.
 - CLI interface
 - Logging and artifact management
 
-## 🎓 Citation
-
-If you use this code, please cite:
-
-```bibtex
-@software{mi3_eeg_2026,
-  title = {MI3 EEG Motor Imagery Classification},
-  author = {MI3-EEG Team},
-  year = {2026},
-  version = {1.0.0}
-}
-```
-
-## 📄 License
-
-[Specify your license here]
-
 ## 🚧 Future Improvements
 
 - [ ] Additional model architectures (RNN, Transformer, Attention)
@@ -477,7 +627,7 @@ Contributions are welcome! Please:
 
 ## 📞 Contact
 
-For questions or issues, please open a GitHub issue or contact [your contact info].
+For questions or issues, please open a GitHub issue or contact artalon.contact@gmail.com
 
 ---
 

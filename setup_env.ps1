@@ -7,8 +7,8 @@ param(
     [switch]$Verbose = $false
 )
 
-# Set error handling policy - STOP on any error
-$ErrorActionPreference = "Stop"
+# Set error handling policy - Continue on error for better recovery
+$ErrorActionPreference = "Continue"
 $VerbosePreference = if ($Verbose) { "Continue" } else { "SilentlyContinue" }
 
 # Track setup success state
@@ -59,26 +59,30 @@ function Show-VenvRecoveryMenu {
     Write-Host "  [1] Remove .venv and retry" -ForegroundColor Cyan
     Write-Host "  [2] Skip venv creation and retry (use existing)" -ForegroundColor Cyan
     Write-Host "  [3] Exit and fix manually" -ForegroundColor Cyan
+    Write-Host "  [4] Fallback to uv sync" -ForegroundColor Cyan
     Write-Host ""
     
-    $choice = Read-Host "Enter your choice (1-3)"
+    $choice = Read-Host "Enter your choice (1-4)"
     return $choice
-}
-
-function Remove-VenvSafely {
-    try {
-        if (Test-Path .\.venv) {
-            Write-Host "Removing corrupted .venv directory..." -ForegroundColor Yellow
-            Remove-Item -Path .\.venv -Recurse -Force -ErrorAction Stop
+}function Remove-VenvForcefully {
+    if (Test-Path .\.venv) {
+        Write-Host "Removing .venv directory..." -ForegroundColor Yellow
+        try {
+            Remove-Item -Path .\.venv -Recurse -Force -ErrorAction Continue
+            # Verify removal
+            Start-Sleep -Milliseconds 500
+            if (Test-Path .\.venv) {
+                Write-Error-Custom "Failed to fully remove .venv"
+                return $false
+            }
             Write-Success ".venv removed successfully"
             return $true
+        } catch {
+            Write-Error-Custom "Error during removal: $_"
+            return $false
         }
-    } catch {
-        Write-Error-Custom "Failed to remove .venv: $_"
-        $venvPath = Join-Path (Get-Location) ".venv"
-        Write-Host "Please manually delete: $venvPath" -ForegroundColor Yellow
-        return $false
     }
+    return $true
 }
 
 # === MAIN SETUP ===
@@ -105,63 +109,55 @@ try {
     }
 }
 
-# --- Create virtual environment with recovery options ---
+# --- Create virtual environment with automatic fallback ---
 Write-Step "Creating virtual environment..."
-$maxRetries = 2
-$retryCount = 0
 $venvCreationSuccess = $false
 
-while ($retryCount -lt $maxRetries -and -not $venvCreationSuccess) {
+# Try uv venv first
+try {
+    Write-Host "Attempting 'uv venv'..." -ForegroundColor Yellow
+    $output = & uv venv 2>&1
+    
+    if (Test-Path .\.venv\Scripts\Activate.ps1) {
+        Write-Success "Virtual environment created successfully"
+        $script:PartialSuccess.VenvCreated = $true
+        $venvCreationSuccess = $true
+    } else {
+        throw "venv created but Activate.ps1 not found"
+    }
+} catch {
+    Write-Error-Custom "uv venv failed: $_"
+    if ($output) {
+        Write-Host "Error details: $output" -ForegroundColor Red
+    }
+    
+    # Automatic fallback to uv sync
+    Write-Host "`nFalling back to 'uv sync'..." -ForegroundColor Yellow
     try {
-        $output = & uv venv 2>&1
-        
-        # Validate venv was created
-        if (Test-Path .\.venv\Scripts\Activate.ps1) {
-            Write-Success "Virtual environment created successfully"
-            $script:PartialSuccess.VenvCreated = $true
-            $venvCreationSuccess = $true
-        } else {
-            throw "Virtual environment directory exists but Activate.ps1 not found"
-        }
-    } catch {
-        $retryCount++
-        Write-Error-Custom "Virtual environment creation failed:"
-        Write-Host "$_" -ForegroundColor Red
-        
-        if ($retryCount -lt $maxRetries) {
-            $choice = Show-VenvRecoveryMenu
-            switch ($choice) {
-                "1" {
-                    if (Remove-VenvSafely) {
-                        Write-Host "Retrying venv creation..." -ForegroundColor Yellow
-                    } else {
-                        Write-Error-Custom "Manual intervention required. Cannot proceed."
-                        exit 1
-                    }
+        if (Remove-VenvForcefully) {
+            Write-Host "Running 'uv sync'..." -ForegroundColor Yellow
+            $syncOutput = & uv sync 2>&1
+            
+            if ($LASTEXITCODE -eq 0 -and (Test-Path .\.venv\Scripts\Activate.ps1)) {
+                Write-Success "uv sync completed successfully"
+                $script:PartialSuccess.VenvCreated = $true
+                $venvCreationSuccess = $true
+            } else {
+                Write-Error-Custom "uv sync failed or created invalid venv"
+                if ($syncOutput) {
+                    Write-Host "Error details: $syncOutput" -ForegroundColor Red
                 }
-                "2" {
-                    if (Test-Path .\.venv\Scripts\Activate.ps1) {
-                        Write-Host "Using existing .venv, continuing..." -ForegroundColor Yellow
-                        $script:PartialSuccess.VenvCreated = $true
-                        $venvCreationSuccess = $true
-                    } else {
-                        Write-Error-Custom "Existing .venv is invalid or missing Activate.ps1"
-                        exit 1
-                    }
-                }
-                "3" {
-                    Write-Host "Setup cancelled by user. Please fix the issues manually and re-run." -ForegroundColor Yellow
-                    exit 1
-                }
-                default {
-                    Write-Error-Custom "Invalid choice. Exiting."
-                    exit 1
-                }
+                Write-Host "Please run manually: uv sync" -ForegroundColor Yellow
+                exit 1
             }
         } else {
-            Write-Error-Custom "Maximum retries reached. Please fix the issues manually."
+            Write-Error-Custom "Could not remove .venv for fallback"
+            Write-Host "Please manually run: Remove-Item .\.venv -Recurse -Force; uv sync" -ForegroundColor Yellow
             exit 1
         }
+    } catch {
+        Write-Error-Custom "Fallback failed: $_"
+        exit 1
     }
 }
 
@@ -259,9 +255,8 @@ if ($allVerificationsPass -and $script:PartialSuccess.PackageInstalled) {
     $script:SetupSuccess = $true
     Write-Section "Setup Complete! ✅"
     Write-Host "`nNext steps:" -ForegroundColor Green
-    Write-Host "  Run tests:       pytest" -ForegroundColor Cyan
     Write-Host "  Train models:    python -m mi3_eeg.main" -ForegroundColor Cyan
-    Write-Host "  Activate venv:   .\.venv\Scripts\Activate.ps1" -ForegroundColor Cyan
+    Write-Host "  Run tests:       pytest" -ForegroundColor Cyan
     Write-Host ""
     exit 0
 } else {
