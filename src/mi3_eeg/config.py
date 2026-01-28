@@ -84,6 +84,8 @@ class DataConfig:
         reduce_rest_ratio: Ratio of Rest samples to keep (1.0 = all).
         test_size: Proportion of data for testing.
         random_seed: Random seed for reproducibility.
+        expected_sampling_rate: Expected sampling rate for validation. If None, no validation.
+        validate_timepoints: Whether to validate timepoints against expected_sampling_rate.
     """
 
     mat_filename: str = "sub-011_eeg.mat"
@@ -96,6 +98,8 @@ class DataConfig:
     reduce_rest_ratio: float = 0.6
     test_size: float = 0.3
     random_seed: int = 42
+    expected_sampling_rate: int | None = None
+    validate_timepoints: bool = True
 
 
 @dataclass(frozen=True)
@@ -112,7 +116,7 @@ class TrainingConfig:
         device: Device to use for training ('cuda' or 'cpu').
     """
 
-    epochs: int = 800
+    epochs: int = 30
     batch_size: int = 32
     learning_rate: float = 0.001
     dropout: float = 0.4

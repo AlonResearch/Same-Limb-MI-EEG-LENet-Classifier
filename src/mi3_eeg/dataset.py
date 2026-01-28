@@ -1,7 +1,8 @@
 """Dataset loading and preprocessing for MI3 EEG data.
 
 This module handles loading EEG data from BIDS-formatted MI3 dataset,
-preprocessing, and creating PyTorch DataLoaders.
+preprocessing, and creating PyTorch DataLoaders. Supports both standardized
+format (all_data/all_label) and raw format (task_data/task_label/rest_data).
 """
 
 from __future__ import annotations
@@ -47,13 +48,22 @@ def load_mat_from_derivatives(
     mat_path: Path,
     reduce_rest_ratio: float = 1.0,
     random_seed: int | None = None,
+    expected_sampling_rate: int | None = None,
+    validate_timepoints: bool = True,
 ) -> EEGDataBundle:
     """Load preprocessed EEG data from BIDS derivatives folder.
+    
+    Supports two formats:
+    1. Standardized format: 'all_data' and 'all_label' keys
+    2. Raw format: 'task_data', 'task_label', and 'rest_data' keys
+       (automatically converted to standardized format)
     
     Args:
         mat_path: Path to .mat file in Datasets/MI3/derivatives/.
         reduce_rest_ratio: Fraction of 'Rest' samples to keep (1.0 = all).
         random_seed: Random seed for reproducibility. If None, uses random.
+        expected_sampling_rate: Expected sampling rate for validation. If None, no validation.
+        validate_timepoints: Whether to validate timepoints against expected_sampling_rate.
     
     Returns:
         EEGDataBundle with loaded and balanced data.
@@ -61,6 +71,7 @@ def load_mat_from_derivatives(
     Raises:
         FileNotFoundError: If .mat file doesn't exist.
         KeyError: If required keys missing from .mat file.
+        ValueError: If timepoint validation fails.
     """
     if not mat_path.exists():
         msg = (
@@ -72,13 +83,48 @@ def load_mat_from_derivatives(
     logger.info(f"Loading dataset from: {mat_path}")
     mat_data = scio.loadmat(str(mat_path))
     
-    # Extract data and labels
-    try:
-        all_data = mat_data["all_data"]
-        all_label = mat_data["all_label"]
-    except KeyError as e:
-        msg = f"Required key {e} not found in .mat file"
-        raise KeyError(msg) from e
+    # Detect format and load data accordingly
+    from mi3_eeg.preprocessing import detect_format, convert_raw_format
+    
+    data_format = detect_format(mat_data)
+    logger.info(f"Detected format: {data_format}")
+    
+    if data_format == 'raw':
+        # Convert raw format to standardized format
+        logger.info("Converting raw format to standardized format...")
+        task_data = mat_data['task_data']
+        task_label = mat_data['task_label']
+        rest_data = mat_data['rest_data']
+        
+        all_data, all_label, inferred_sampling_rate = convert_raw_format(
+            task_data, task_label, rest_data
+        )
+        
+        # Update expected sampling rate if not provided
+        if expected_sampling_rate is None:
+            expected_sampling_rate = inferred_sampling_rate
+            logger.info(f"Using inferred sampling rate: {expected_sampling_rate}Hz")
+    else:
+        # Extract data and labels from standardized format
+        try:
+            all_data = mat_data["all_data"]
+            all_label = mat_data["all_label"]
+        except KeyError as e:
+            msg = f"Required key {e} not found in .mat file"
+            raise KeyError(msg) from e
+    
+    # Validate timepoints if requested
+    if validate_timepoints and expected_sampling_rate is not None:
+        timepoints = all_data.shape[2] if all_data.ndim == 3 else all_data.shape[1]
+        expected_timepoints = expected_sampling_rate * 4  # 4-second trials
+        tolerance = expected_timepoints * 0.1  # 10% tolerance
+        
+        if abs(timepoints - expected_timepoints) > tolerance:
+            logger.warning(
+                f"Timepoint mismatch: expected ~{expected_timepoints} "
+                f"({expected_sampling_rate}Hz × 4s), got {timepoints}. "
+                f"Tolerance: ±{tolerance:.0f}"
+            )
     
     # Log original distribution
     logger.info(f"Original data shape: {all_data.shape}")
@@ -87,6 +133,14 @@ def load_mat_from_derivatives(
     # Calculate original class distribution
     original_dist = _calculate_class_distribution(all_label)
     logger.info(f"Original class distribution: {original_dist}")
+    
+    # Verify labels are correct (0, 1, 2)
+    unique_labels = np.unique(all_label)
+    expected_labels = np.array([0, 1, 2])
+    if not np.array_equal(unique_labels, expected_labels):
+        logger.warning(
+            f"Label values mismatch! Expected {expected_labels}, got {unique_labels}"
+        )
     
     # Balance dataset if needed
     if reduce_rest_ratio < 1.0:
@@ -102,12 +156,20 @@ def load_mat_from_derivatives(
     num_classes = len(np.unique(all_label))
     class_dist = _calculate_class_distribution(all_label)
     
+    # Determine actual sampling rate
+    if data_format == 'raw' and 'inferred_sampling_rate' in locals():
+        actual_sampling_rate = inferred_sampling_rate
+    elif expected_sampling_rate is not None:
+        actual_sampling_rate = expected_sampling_rate
+    else:
+        actual_sampling_rate = 90  # Default from MI3 dataset specification
+    
     return EEGDataBundle(
         data=all_data,
         labels=all_label,
         channel_count=channel_count,
         num_classes=num_classes,
-        sample_rate=90,  # From MI3 dataset specification
+        sample_rate=actual_sampling_rate,
         class_distribution=class_dist,
     )
 
@@ -254,6 +316,8 @@ def load_dataset_from_config(
         mat_path=mat_path,
         reduce_rest_ratio=config.reduce_rest_ratio,
         random_seed=config.random_seed,
+        expected_sampling_rate=config.expected_sampling_rate,
+        validate_timepoints=config.validate_timepoints,
     )
 
 
