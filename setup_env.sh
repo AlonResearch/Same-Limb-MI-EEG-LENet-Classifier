@@ -177,7 +177,7 @@ if [ -d ".venv" ] && [ "$SKIP_VENV_CREATION" != "true" ]; then
     write_info "Virtual environment already exists. Running sync..."
 fi
 
-if SYNC_OUTPUT=$(uv sync --all-extras 2>&1); then
+if SYNC_OUTPUT=$(uv sync --all-extras --index-url https://download.pytorch.org/whl/cu124 2>&1); then
     if [ -f ".venv/bin/activate" ]; then
         write_success "uv sync completed successfully"
         SETUP_SUCCESS[SyncCompleted]=true
@@ -191,7 +191,7 @@ else
     if [ "$FORCE_REINSTALL" = true ]; then
         write_info "Attempting recovery: removing .venv and retrying..."
         if remove_venv_forcefully; then
-            if uv sync --all-extras 2>&1; then
+            if uv sync --all-extras --index-url https://download.pytorch.org/whl/cu124 2>&1; then
                 if [ -f ".venv/bin/activate" ]; then
                     write_success "uv sync completed successfully on retry"
                     SETUP_SUCCESS[SyncCompleted]=true
@@ -235,38 +235,15 @@ fi
 write_success "Virtual environment activated: $VIRTUAL_ENV"
 SETUP_SUCCESS[VenvActivated]=true
 
-# --- Install/Update PyTorch with CUDA ---
-write_step "Checking PyTorch installation..."
+# --- Verify PyTorch installation ---
+write_step "Verifying PyTorch installation..."
 if check_package_installed "torch"; then
-    if [ "$FORCE_REINSTALL" = false ]; then
-        write_success "PyTorch already installed (skipping)"
-        SETUP_SUCCESS[TorchInstalled]=true
-    else
-        write_info "Force reinstall requested. Uninstalling existing PyTorch..."
-        pip uninstall torch -y 2>&1 | grep -v "^Successfully uninstalled" > /dev/null
-        
-        write_step "Installing PyTorch with CUDA 12.4..."
-        if run_with_output "pip install torch --index-url https://download.pytorch.org/whl/cu124 2>&1"; then
-            write_success "PyTorch installed successfully"
-            SETUP_SUCCESS[TorchInstalled]=true
-        else
-            write_error "PyTorch installation failed"
-            write_info "PyTorch installation failed, but base environment is ready."
-            write_info "You can retry with: pip install torch --index-url https://download.pytorch.org/whl/cu124"
-            exit 1
-        fi
-    fi
+    write_success "PyTorch installed (with CUDA 12.4 support)"
+    SETUP_SUCCESS[TorchInstalled]=true
 else
-    write_step "Installing PyTorch with CUDA 12.4..."
-    if run_with_output "pip install torch --index-url https://download.pytorch.org/whl/cu124 2>&1"; then
-        write_success "PyTorch installed successfully"
-        SETUP_SUCCESS[TorchInstalled]=true
-    else
-        write_error "PyTorch installation failed"
-        write_info "PyTorch installation failed, but base environment is ready."
-        write_info "You can retry with: pip install torch --index-url https://download.pytorch.org/whl/cu124"
-        exit 1
-    fi
+    write_error "PyTorch installation verification failed"
+    write_info "PyTorch was not installed. Verify with: python -c 'import torch; print(torch.__version__)'"
+    exit 1
 fi
 
 # === VERIFICATION ===
