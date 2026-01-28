@@ -242,8 +242,12 @@ if ($allVerificationsPass -and $script:PartialSuccess.SyncCompleted -and $script
     $script:SetupSuccess = $true
     Write-Section "Setup Complete! ✅"
     Write-Host "`nNext steps:" -ForegroundColor Green
-    Write-Host "  Train models:    python -m mi3_eeg.main" -ForegroundColor Cyan
-    Write-Host "  Run tests:       pytest" -ForegroundColor Cyan
+    Write-Host "  1. Activate virtual environment:" -ForegroundColor Yellow
+    Write-Host "     .\.venv\Scripts\Activate.ps1" -ForegroundColor Cyan
+    Write-Host "`n  2. Train models:" -ForegroundColor Yellow
+    Write-Host "     python -m mi3_eeg.main" -ForegroundColor Cyan
+    Write-Host "`n  3. Run tests:" -ForegroundColor Yellow
+    Write-Host "     pytest" -ForegroundColor Cyan
     Write-Host ""
     exit 0
 } else {

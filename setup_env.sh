@@ -302,8 +302,14 @@ if [ "$ALL_VERIFICATIONS_PASS" = true ] && [ "${SETUP_SUCCESS[SyncCompleted]}" =
     write_success "All components installed and verified!"
     echo ""
     echo "Next steps:"
-    echo -e "  ${CYAN}Train models:${NC}    python -m mi3_eeg.main"
-    echo -e "  ${CYAN}Run tests:${NC}       pytest"
+    echo -e "  ${YELLOW}1. Activate virtual environment:${NC}"
+    echo -e "     ${CYAN}source .venv/bin/activate${NC}"
+    echo ""
+    echo -e "  ${YELLOW}2. Train models:${NC}"
+    echo -e "     ${CYAN}python -m mi3_eeg.main${NC}"
+    echo ""
+    echo -e "  ${YELLOW}3. Run tests:${NC}"
+    echo -e "     ${CYAN}pytest${NC}"
     echo ""
     exit 0
 else
