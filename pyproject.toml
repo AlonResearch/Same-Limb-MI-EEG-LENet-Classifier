@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "mi3-eeg"
 version = "1.0.0"
-description = "MI3 EEG Motor Imagery Classification using Deep Learning"
+description = "Same Limb MI-EEG LENet Classifier - Motor Imagery Classification for Same-Limb Movement using LENet Architecture"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [
