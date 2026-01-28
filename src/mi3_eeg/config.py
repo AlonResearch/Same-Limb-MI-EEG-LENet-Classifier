@@ -88,15 +88,15 @@ class DataConfig:
         validate_timepoints: Whether to validate timepoints against expected_sampling_rate.
     """
 
-    mat_filename: str = "sub-011_eeg.mat"
-    subject_id: str = "sub-011"
-    sampling_rate: int = 90
+    mat_filename: str = "sub-008_eeg200hz.mat"
+    subject_id: str = "sub-008"
+    sampling_rate: int = 200
     bandpass_filter: tuple[int, int] = (7, 35)
     num_channels: int = 62
     num_classes: int = 3
     class_names: tuple[str, ...] = ("Rest", "Elbow", "Hand")
-    reduce_rest_ratio: float = 0.6
-    test_size: float = 0.3
+    reduce_rest_ratio: float = 1
+    test_size: float = 0.2
     random_seed: int = 42
     expected_sampling_rate: int | None = None
     validate_timepoints: bool = True
@@ -116,9 +116,9 @@ class TrainingConfig:
         device: Device to use for training ('cuda' or 'cpu').
     """
 
-    epochs: int = 30
-    batch_size: int = 32
-    learning_rate: float = 0.001
+    epochs: int = 300
+    batch_size: int = 64
+    learning_rate: float = 0.01
     dropout: float = 0.4
     early_stopping_patience: int = 200
     early_stopping_min_delta: float = 5e-4
@@ -137,7 +137,7 @@ class ModelConfig:
 
     channel_count: int = 62
     classes_num: int = 3
-    drop_out: float = 0.40
+    drop_out: float = 0.4
 
 
 # Global constants

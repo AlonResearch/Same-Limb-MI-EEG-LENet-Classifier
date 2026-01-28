@@ -17,6 +17,11 @@ import torch
 import torch.utils.data as data_utils
 
 from mi3_eeg.config import DataConfig, Paths
+from mi3_eeg.data_formatting.dataformatter import (
+    detect_format,
+    format_and_save,
+    convert_raw_format,
+)
 from mi3_eeg.logger import logger
 
 if TYPE_CHECKING:
@@ -78,8 +83,6 @@ def load_mat_from_derivatives(
     mat_data = scio.loadmat(str(mat_path))
     
     # Detect format and load data accordingly
-    from mi3_eeg.dataformatter import detect_format, convert_raw_format, format_and_save
-    
     data_format = detect_format(mat_data)
     logger.info(f"Detected format: {data_format}")
     
@@ -348,18 +351,35 @@ def prepare_data_loaders(
     """
     from sklearn.model_selection import train_test_split
     
-    # Split data
+    # Split data with stratification to maintain class balance
     train_data, test_data, train_labels, test_labels = train_test_split(
         data_bundle.data,
         data_bundle.labels,
         test_size=config.test_size,
         shuffle=True,
+        stratify=data_bundle.labels,
         random_state=config.random_seed,
     )
+    
+    # Log split details with class distributions
+    train_label_flat = train_labels.ravel()
+    test_label_flat = test_labels.ravel()
+    train_dist = {
+        'Rest': int(np.sum(train_label_flat == 0)),
+        'Elbow': int(np.sum(train_label_flat == 1)),
+        'Hand': int(np.sum(train_label_flat == 2)),
+    }
+    test_dist = {
+        'Rest': int(np.sum(test_label_flat == 0)),
+        'Elbow': int(np.sum(test_label_flat == 1)),
+        'Hand': int(np.sum(test_label_flat == 2)),
+    }
     
     logger.info(
         f"Split: {len(train_data)} train samples, {len(test_data)} test samples"
     )
+    logger.info(f"Train distribution: {train_dist}")
+    logger.info(f"Test distribution: {test_dist}")
     
     # Create DataLoaders
     train_loader = create_data_loader(

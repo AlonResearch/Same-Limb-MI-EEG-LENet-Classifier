@@ -29,6 +29,8 @@ def main(
     model_types: list[str] | None = None,
     epochs: int | None = None,
     device: str | None = None,
+    subject_file: str | None = None,
+    subject_id: str | None = None,
 ) -> None:
     """Run the full ML pipeline.
     
@@ -37,6 +39,8 @@ def main(
                 If None, defaults to 'lenet'.
         epochs: Number of training epochs. If None, uses config default.
         device: Device to use ('cuda' or 'cpu'). If None, auto-detects.
+        subject_file: Subject .mat file to use. If None, uses config default.
+        subject_id: Subject ID. If None, inferred from subject_file.
     """
     logger.info("=" * 80)
     logger.info("MI3 EEG Motor Imagery Classification Pipeline")
@@ -64,9 +68,28 @@ def main(
     logger.info("STAGE 1: Loading and Preprocessing Data")
     logger.info("=" * 80)
     
-    data_config = DataConfig()
+    # Override config if subject file is provided
+    if subject_file is not None:
+        # Infer subject_id from filename if not provided
+        if subject_id is None:
+            subject_id = subject_file.split('_')[0]
+        # Infer sampling rate from filename
+        sampling_rate = 90  # default
+        if '200hz' in subject_file.lower():
+            sampling_rate = 200
+        elif '90hz' in subject_file.lower():
+            sampling_rate = 90
+        data_config = DataConfig(
+            mat_filename=subject_file,
+            subject_id=subject_id,
+            sampling_rate=sampling_rate,
+        )
+    else:
+        data_config = DataConfig()
+    
     logger.info(f"Dataset: {data_config.mat_filename}")
     logger.info(f"Subject: {data_config.subject_id}")
+    logger.info(f"Sampling rate: {data_config.sampling_rate} Hz")
     logger.info(f"Test split: {data_config.test_size * 100}%")
     
     # Load dataset
@@ -118,11 +141,11 @@ def main(
             train_loader,
             test_loader,
             training_config,
-            save_path=paths.models / f"{model_type}_best.pth",
+            save_path=paths.models / f"{data_config.subject_id}_{model_type}_best.pth",
         )
         
         # Save final model
-        save_model(model, paths.models / f"{model_type}_final.pth")
+        save_model(model, paths.models / f"{data_config.subject_id}_{model_type}_final.pth")
         
         trained_models[model_type] = model
         training_histories[model_type] = history
@@ -144,9 +167,10 @@ def main(
     
     # Save results
     for model_name, results in evaluation_results.items():
+        filename = f"{data_config.subject_id}_{model_name}_results.json"
         save_evaluation_results(
             results,
-            paths.reports_metrics / f"{model_name}_results.json",
+            paths.reports_metrics / filename,
             model_name,
         )
     
@@ -159,6 +183,7 @@ def main(
         training_histories,
         evaluation_results,
         paths.reports_figures,
+        subject_id=data_config.subject_id,
     )
     
     # === COMPLETION ===
@@ -201,12 +226,28 @@ def cli() -> None:
         help="Device to use (default: auto-detect)",
     )
     
+    parser.add_argument(
+        "--subject-file",
+        type=str,
+        default=None,
+        help="Subject .mat file to use (e.g., sub-008_eeg200hz.mat)",
+    )
+    
+    parser.add_argument(
+        "--subject-id",
+        type=str,
+        default=None,
+        help="Subject ID (default: inferred from filename)",
+    )
+    
     args = parser.parse_args()
     
     main(
         model_types=args.models,
         epochs=args.epochs,
         device=args.device,
+        subject_file=args.subject_file,
+        subject_id=args.subject_id,
     )
 
 

@@ -347,6 +347,7 @@ def create_all_visualizations(
     training_history: dict[str, TrainingHistory],
     evaluation_results: dict[str, EvaluationResults],
     output_dir: Path,
+    subject_id: str = "subject",
 ) -> None:
     """Create and save all visualization plots.
     
@@ -354,6 +355,7 @@ def create_all_visualizations(
         training_history: Dictionary mapping model names to TrainingHistory.
         evaluation_results: Dictionary mapping model names to EvaluationResults.
         output_dir: Directory to save all plots.
+        subject_id: Subject identifier to prefix filenames (default: "subject").
     """
     logger.info("Creating all visualizations...")
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -362,18 +364,18 @@ def create_all_visualizations(
     for model_name, history in training_history.items():
         plot_training_curves(
             history,
-            save_path=output_dir / f"{model_name}_training_curves.png",
+            save_path=output_dir / f"{subject_id}_{model_name}_training_curves.png",
         )
     
     # Confusion matrices for each model
     for model_name, results in evaluation_results.items():
         plot_confusion_matrix(
             results,
-            save_path=output_dir / f"{model_name}_confusion_matrix.png",
+            save_path=output_dir / f"{subject_id}_{model_name}_confusion_matrix.png",
         )
         plot_confusion_matrix_custom_colors(
             results,
-            save_path=output_dir / f"{model_name}_confusion_matrix_custom.png",
+            save_path=output_dir / f"{subject_id}_{model_name}_confusion_matrix_custom.png",
         )
     
     # Comparisons
