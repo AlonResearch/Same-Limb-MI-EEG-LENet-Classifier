@@ -66,29 +66,7 @@ MI-EEG-Final-ML-Proj/
 - **scipy:** 1.11+ for .mat file loading
 - **pandas:** 2.0+ for data handling
 
-PyTorch with CUDA 12.4 is automatically installed through the custom PyTorch index configured in `pyproject.toml`. All other dependencies are managed through `pyproject.toml` and automatically installed.
-
-### PyTorch CUDA Configuration
-
-The project uses a **declarative approach** for PyTorch CUDA installation via `pyproject.toml`:
-
-```toml
-[tool.uv.sources]
-torch = [{ index = "pytorch-cu124" }]
-
-[[tool.uv.index]]
-name = "pytorch-cu124"
-url = "https://download.pytorch.org/whl/cu124"
-explicit = true
-```
-
-**Benefits:**
-- ✅ **Single source of truth**: PyTorch CUDA configuration in one place
-- ✅ **Automatic installation**: No manual index URLs needed
-- ✅ **Consistent across environments**: Same build on all machines
-- ✅ **Explicit index**: Only PyTorch uses this index, other packages from PyPI
-
-This follows the [official uv PyTorch integration guide](https://docs.astral.sh/uv/guides/integration/pytorch/).
+PyTorch with CUDA 12.4 is automatically installed through the custom PyTorch index configured in `pyproject.toml`.
 
 ## 🚀 Quick Start
 
