@@ -15,7 +15,7 @@ Motor-imagery EEG trials from the MI3 dataset are classified with the LENet arch
 - ✅ Automated training with early stopping
 - ✅ Rich visualization suite
 - ✅ GPU/CUDA acceleration support
-- ✅ 71 unit tests ensuring reliability (including CUDA tests)
+- ✅ 63 unit tests ensuring reliability (including CUDA tests)
 
 ## 📁 Project Structure
 
@@ -30,7 +30,7 @@ MI-EEG-Final-ML-Proj/
 │   ├── evaluation.py         # Metrics and evaluation
 │   ├── visualization.py      # Plotting and visualization
 │   └── main.py               # Pipeline orchestrator
-├── tests/                    # Unit tests (60+ tests)
+├── tests/                    # Unit tests (63 tests)
 ├── Datasets/                 # BIDS-formatted MI3 dataset
 │   └── MI3/
 │       ├── sourcedata/       # Raw .cnt files (immutable)
@@ -59,14 +59,36 @@ MI-EEG-Final-ML-Proj/
 - **Storage:** 2GB for dependencies + dataset
 
 ### Core Dependencies
-- **PyTorch:** 2.5.1+ with CUDA 12.4 support
-- **NumPy:** 2.4+ for numerical operations
-- **scikit-learn:** 1.8+ for metrics and data splitting
-- **matplotlib:** 3.10+ for visualizations
-- **scipy:** 1.16+ for .mat file loading
-- **pandas:** 2.3+ for data handling
+- **PyTorch:** 2.5.1+ with CUDA 12.4 support (configured via `pyproject.toml`)
+- **NumPy:** 1.24+ for numerical operations
+- **scikit-learn:** 1.3+ for metrics and data splitting
+- **matplotlib:** 3.7+ for visualizations
+- **scipy:** 1.11+ for .mat file loading
+- **pandas:** 2.0+ for data handling
 
-All dependencies are managed through `pyproject.toml` and automatically installed.
+PyTorch with CUDA 12.4 is automatically installed through the custom PyTorch index configured in `pyproject.toml`. All other dependencies are managed through `pyproject.toml` and automatically installed.
+
+### PyTorch CUDA Configuration
+
+The project uses a **declarative approach** for PyTorch CUDA installation via `pyproject.toml`:
+
+```toml
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu124" }]
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+```
+
+**Benefits:**
+- ✅ **Single source of truth**: PyTorch CUDA configuration in one place
+- ✅ **Automatic installation**: No manual index URLs needed
+- ✅ **Consistent across environments**: Same build on all machines
+- ✅ **Explicit index**: Only PyTorch uses this index, other packages from PyPI
+
+This follows the [official uv PyTorch integration guide](https://docs.astral.sh/uv/guides/integration/pytorch/).
 
 ## 🚀 Quick Start
 
@@ -97,19 +119,14 @@ cd MI-EEG-Final-ML-Proj
 
 The setup script will:
 - ✅ Verify uv is installed (or install if missing)
-- ✅ Create virtual environment
-- ✅ Install PyTorch with CUDA 12.4
-- ✅ Install all dependencies
+- ✅ Create virtual environment with `uv sync`
+- ✅ Install all dependencies (including PyTorch CUDA 12.4)
+- ✅ Install optional dependencies (test, lint, notebook)
 - ✅ Verify installation and CUDA
 
 **After setup completes, activate the virtual environment:**
 ```powershell
 .\.venv\Scripts\Activate.ps1
-```
-
-**If the setup script is interrupted, finish install manually:**
-```powershell
-uv pip install -e .
 ```
 
 **VS Code users:** Select the Python interpreter from `.venv` (Ctrl+Shift+P → "Python: Select Interpreter")
@@ -132,19 +149,14 @@ chmod +x setup_env.sh
 
 The setup script will:
 - ✅ Verify uv is installed (or install if missing)
-- ✅ Create virtual environment
-- ✅ Install PyTorch with CUDA 12.4
-- ✅ Install all dependencies
+- ✅ Create virtual environment with `uv sync`
+- ✅ Install all dependencies (including PyTorch CUDA 12.4)
+- ✅ Install optional dependencies (test, lint, notebook)
 - ✅ Verify installation and CUDA
 
 **After setup completes, activate the virtual environment:**
 ```bash
 source .venv/bin/activate
-```
-
-**If the setup script is interrupted, finish install manually:**
-```bash
-uv pip install -e .
 ```
 
 **VS Code users:** Select the Python interpreter from `.venv` (Cmd+Shift+P → "Python: Select Interpreter")
@@ -210,18 +222,12 @@ uv venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-4. **Install PyTorch with CUDA support:**
+4. **Install all dependencies (includes PyTorch CUDA 12.4):**
 ```powershell
-# For CUDA 12.4
-uv pip install torch --index-url https://download.pytorch.org/whl/cu124
+uv sync --all-extras
 ```
 
-5. **Install the package with dependencies:**
-```powershell
-uv pip install -e ".[test]"
-```
-
-6. **Verify installation:**
+5. **Verify installation:**
 ```powershell
 # Check package
 python -c "import mi3_eeg; print(f'mi3_eeg v{mi3_eeg.__version__}')"
@@ -256,18 +262,12 @@ uv venv
 source .venv/bin/activate
 ```
 
-4. **Install PyTorch with CUDA support:**
+4. **Install all dependencies (includes PyTorch CUDA 12.4):**
 ```bash
-# For CUDA 12.4
-uv pip install torch --index-url https://download.pytorch.org/whl/cu124
+uv sync --all-extras
 ```
 
-5. **Install the package with dependencies:**
-```bash
-uv pip install -e ".[test]"
-```
-
-6. **Verify installation:**
+5. **Verify installation:**
 ```bash
 # Check package
 python -c "import mi3_eeg; print(f'mi3_eeg v{mi3_eeg.__version__}')"
@@ -426,14 +426,33 @@ source .venv/bin/activate  # Linux/Mac
 <details>
 <summary><b>❌ Issue: PyTorch CPU version installed instead of CUDA</b></summary>
 
-Uninstall and reinstall the CUDA version:
-```bash
-# Uninstall CPU version
-uv pip uninstall torch
+The project is configured to automatically install PyTorch with CUDA 12.4 support through the PyTorch index specified in `pyproject.toml`. If you're seeing the CPU version:
 
-# Install CUDA version
-uv pip install torch --index-url https://download.pytorch.org/whl/cu124
+```bash
+# Check current PyTorch version
+python -c "import torch; print(torch.__version__)"
+
+# Should show something like: 2.6.0+cu124
+
+# If it shows +cpu instead, reinstall:
+# 1. Remove venv
+rm -rf .venv  # Linux/Mac
+Remove-Item -Recurse -Force .venv  # Windows
+
+# 2. Run setup script again
+./setup_env.sh  # Linux/Mac
+.\setup_env.ps1  # Windows
 ```
+
+The `pyproject.toml` contains:
+```toml
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+```
+
+This ensures PyTorch with CUDA 12.4 is always installed automatically.
 
 </details>
 
@@ -442,20 +461,30 @@ uv pip install torch --index-url https://download.pytorch.org/whl/cu124
 
 Verify CUDA installation and configuration:
 ```bash
-# Verify CUDA is installed on system
+# 1. Verify CUDA is installed on system
 nvidia-smi
 
-# Check PyTorch CUDA support
-python -c "import torch; print(f'CUDA Available: {torch.cuda.is_available()}'); print(f'CUDA Version: {torch.version.cuda}')"
+# 2. Check PyTorch version and CUDA support
+python -c "import torch; print(f'PyTorch: {torch.__version__}'); print(f'CUDA Available: {torch.cuda.is_available()}'); print(f'CUDA Version: {torch.version.cuda if torch.cuda.is_available() else "N/A"}')"
+
+# Expected output:
+# PyTorch: 2.6.0+cu124
+# CUDA Available: True
+# CUDA Version: 12.4
 
 # If CUDA not detected:
-# 1. Reinstall torch with correct CUDA index
-uv pip uninstall torch
-uv pip install torch --index-url https://download.pytorch.org/whl/cu124
-
-# 2. Verify NVIDIA drivers are up-to-date
+# 1. Check NVIDIA drivers are up-to-date (requires 525+ for CUDA 12.4)
 nvidia-smi  # Check driver version at top
+
+# 2. Verify PyTorch CUDA build is installed (should show +cu124)
+python -c "import torch; print(torch.__version__)"
+
+# 3. If showing CPU build (+cpu), reinstall environment
+rm -rf .venv && ./setup_env.sh  # Linux/Mac
+Remove-Item -Recurse -Force .venv; .\setup_env.ps1  # Windows
 ```
+
+**Note:** The project automatically configures PyTorch with CUDA 12.4 through `pyproject.toml`. The setup scripts handle this automatically.
 
 </details>
 
