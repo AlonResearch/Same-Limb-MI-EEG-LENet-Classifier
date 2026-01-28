@@ -1,0 +1,32 @@
+{
+  "model_name": "lenet",
+  "overall_accuracy": 0.6111111111111112,
+  "class_accuracies": {
+    "Rest": 0.6166666666666667,
+    "Elbow": 0.6333333333333333,
+    "Hand": 0.5833333333333334
+  },
+  "confusion_matrix": [
+    [
+      37,
+      13,
+      10
+    ],
+    [
+      8,
+      38,
+      14
+    ],
+    [
+      2,
+      23,
+      35
+    ]
+  ],
+  "class_names": [
+    "Rest",
+    "Elbow",
+    "Hand"
+  ],
+  "num_samples": 180
+}
