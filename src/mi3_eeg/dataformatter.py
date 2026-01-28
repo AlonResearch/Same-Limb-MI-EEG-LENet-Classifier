@@ -141,13 +141,15 @@ def convert_raw_format(
 def format_and_save(
     input_path: Path,
     output_path: Path | None = None,
+    output_dir: Path | None = None,
     subject_id: str | None = None,
 ) -> Path:
     """Format raw MI3 .mat file and save in standardized format.
     
     Args:
         input_path: Path to raw .mat file with task_data/task_label/rest_data.
-        output_path: Optional output path. If None, generates filename with sampling rate.
+        output_path: Optional full output path. If None, generates filename in output_dir.
+        output_dir: Optional output directory. If None, uses input_path parent directory.
         subject_id: Optional subject ID for output filename (e.g., 'sub-017').
     
     Returns:
@@ -204,7 +206,12 @@ def format_and_save(
         
         # Include sampling rate in filename: sub-017_eeg200hz.mat
         output_filename = f"{subject_id}_eeg{sampling_rate}hz.mat"
-        output_path = input_path.parent / output_filename
+        
+        # Determine output directory
+        if output_dir is None:
+            output_dir = input_path.parent
+        
+        output_path = output_dir / output_filename
     
     # Save formatted data
     logger.info(f"Saving formatted data to: {output_path}")

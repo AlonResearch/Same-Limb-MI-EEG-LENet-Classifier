@@ -84,21 +84,42 @@ def load_mat_from_derivatives(
     mat_data = scio.loadmat(str(mat_path))
     
     # Detect format and load data accordingly
-    from mi3_eeg.dataformatter import detect_format, convert_raw_format
+    from mi3_eeg.dataformatter import detect_format, convert_raw_format, format_and_save
     
     data_format = detect_format(mat_data)
     logger.info(f"Detected format: {data_format}")
     
     if data_format == 'raw':
-        # Convert raw format to standardized format
+        # Convert and save raw format to standardized format in derivatives folder
         logger.info("Converting raw format to standardized format...")
-        task_data = mat_data['task_data']
-        task_label = mat_data['task_label']
-        rest_data = mat_data['rest_data']
         
-        all_data, all_label, inferred_sampling_rate = convert_raw_format(
-            task_data, task_label, rest_data
-        )
+        # Get the derivatives path for saving
+        from mi3_eeg.config import Paths
+        paths = Paths.from_here()
+        
+        # Format and save to derivatives folder
+        try:
+            formatted_path = format_and_save(
+                input_path=mat_path,
+                output_dir=paths.dataset_derivatives
+            )
+            logger.info(f"Saved formatted data to: {formatted_path}")
+            # Load from the newly saved formatted file
+            mat_path = formatted_path
+            mat_data = scio.loadmat(str(mat_path))
+            all_data = mat_data["all_data"]
+            all_label = mat_data["all_label"]
+            inferred_sampling_rate = int(mat_data.get("sampling_rate", [90])[0])
+        except Exception as e:
+            logger.warning(f"Could not save formatted file: {e}, using in-memory conversion")
+            # Fallback: use in-memory conversion
+            task_data = mat_data['task_data']
+            task_label = mat_data['task_label']
+            rest_data = mat_data['rest_data']
+            
+            all_data, all_label, inferred_sampling_rate = convert_raw_format(
+                task_data, task_label, rest_data
+            )
         
         # Update expected sampling rate if not provided
         if expected_sampling_rate is None:
