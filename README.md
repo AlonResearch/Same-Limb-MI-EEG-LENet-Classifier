@@ -37,8 +37,6 @@ MI-EEG-Final-ML-Proj/
 │       ├── derivatives/      # Preprocessed .mat files
 │       └── code/             # MATLAB preprocessing scripts
 ├── data/                     # PyTorch processing cache
-│   ├── tensors/              # Cached tensors
-│   └── splits/               # Train/test splits
 ├── models/                   # Saved model weights
 ├── reports/                  # Training outputs
 │   ├── figures/              # Plots and visualizations

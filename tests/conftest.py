@@ -90,8 +90,6 @@ def mock_paths(tmp_path: Path) -> Path:
     (tmp_path / "Datasets" / "MI3" / "derivatives").mkdir(parents=True)
     (tmp_path / "Datasets" / "MI3" / "sourcedata").mkdir(parents=True)
     (tmp_path / "Datasets" / "MI3" / "code").mkdir(parents=True)
-    (tmp_path / "data" / "tensors").mkdir(parents=True)
-    (tmp_path / "data" / "splits").mkdir(parents=True)
     (tmp_path / "models").mkdir(parents=True)
     (tmp_path / "reports" / "figures").mkdir(parents=True)
     (tmp_path / "reports" / "metrics").mkdir(parents=True)

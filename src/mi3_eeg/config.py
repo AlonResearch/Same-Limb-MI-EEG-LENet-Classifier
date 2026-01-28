@@ -20,8 +20,6 @@ class Paths:
         dataset_sourcedata: Raw .cnt files (immutable).
         dataset_derivatives: Processed .mat files from MATLAB.
         dataset_code: MATLAB preprocessing scripts.
-        data_tensors: Cached PyTorch tensor files.
-        data_splits: Train/test split indices.
         models: Saved model weights.
         reports_figures: Generated plots and visualizations.
         reports_metrics: Metrics and evaluation results.
@@ -33,8 +31,6 @@ class Paths:
     dataset_sourcedata: Path
     dataset_derivatives: Path
     dataset_code: Path
-    data_tensors: Path
-    data_splits: Path
     models: Path
     reports_figures: Path
     reports_metrics: Path
@@ -55,8 +51,6 @@ class Paths:
             dataset_sourcedata=dataset_root / "sourcedata",
             dataset_derivatives=dataset_root / "derivatives",
             dataset_code=dataset_root / "code",
-            data_tensors=root / "data" / "tensors",
-            data_splits=root / "data" / "splits",
             models=root / "models",
             reports_figures=root / "reports" / "figures",
             reports_metrics=root / "reports" / "metrics",
@@ -66,8 +60,6 @@ class Paths:
     def create_directories(self) -> None:
         """Create all necessary project directories if they don't exist."""
         for path_attr in [
-            "data_tensors",
-            "data_splits",
             "models",
             "reports_figures",
             "reports_metrics",
