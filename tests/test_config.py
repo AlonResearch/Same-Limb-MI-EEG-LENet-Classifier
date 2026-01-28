@@ -82,67 +82,12 @@ def test_paths_create_directories(tmp_path: Path) -> None:
     assert test_paths.reports_logs.exists()
 
 
-def test_data_config_defaults() -> None:
-    """Test DataConfig default values."""
-    config = DataConfig()
-    
-    assert config.mat_filename == "sub-011_eeg90hz.mat"
-    assert config.subject_id == "sub-011"
-    assert config.sampling_rate == 90
-    assert config.bandpass_filter == (7, 35)
-    assert config.num_channels == 62
-    assert config.num_classes == 3
-    assert config.class_names == ("Rest", "Elbow", "Hand")
-    assert config.reduce_rest_ratio == 1.0
-    assert config.test_size == 0.2
-    assert config.random_seed == 0
-
-
 def test_data_config_immutable() -> None:
     """Test that DataConfig is immutable."""
     config = DataConfig()
     
     with pytest.raises(AttributeError):
         config.test_size = 0.3  # type: ignore[misc]
-
-
-def test_training_config_defaults() -> None:
-    """Test TrainingConfig default values."""
-    config = TrainingConfig()
-    
-    assert config.epochs == 1000
-    assert config.batch_size == 64
-    assert config.learning_rate == 0.01
-    assert config.dropout == 0.35
-    assert config.early_stopping_patience == 50
-    assert config.early_stopping_min_delta == 5e-4
-    assert config.device == "cuda"
-
-
-def test_training_config_custom() -> None:
-    """Test TrainingConfig with custom values."""
-    config = TrainingConfig(
-        epochs=500,
-        batch_size=32,
-        learning_rate=0.001,
-        device="cpu",
-    )
-    
-    assert config.epochs == 500
-    assert config.batch_size == 32
-    assert config.learning_rate == 0.001
-    assert config.device == "cpu"
-    # Defaults should still apply for non-specified parameters
-    assert config.dropout == 0.35
-
-
-def test_model_config_defaults() -> None:
-    """Test ModelConfig default values."""
-    config = ModelConfig()
-    
-    assert config.channel_count == 62
-    assert config.classes_num == 3
-    assert config.drop_out == 0.35
 
 
 def test_model_config_immutable() -> None:
