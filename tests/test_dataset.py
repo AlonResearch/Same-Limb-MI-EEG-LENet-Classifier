@@ -211,8 +211,6 @@ def test_load_dataset_with_custom_config(temp_mat_file: Path, mock_paths: Path) 
         dataset_sourcedata=mock_paths / "Datasets" / "MI3" / "sourcedata",
         dataset_derivatives=mock_paths / "Datasets" / "MI3" / "derivatives",
         dataset_code=mock_paths / "Datasets" / "MI3" / "code",
-        data_tensors=mock_paths / "data" / "tensors",
-        data_splits=mock_paths / "data" / "splits",
         models=mock_paths / "models",
         reports_figures=mock_paths / "reports" / "figures",
         reports_metrics=mock_paths / "reports" / "metrics",

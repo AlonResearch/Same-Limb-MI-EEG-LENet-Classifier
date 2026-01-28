@@ -42,10 +42,6 @@ def test_paths_structure() -> None:
     assert paths.dataset_derivatives == paths.dataset_root / "derivatives"
     assert paths.dataset_code == paths.dataset_root / "code"
     
-    # Data processing paths
-    assert paths.data_tensors == paths.project_root / "data" / "tensors"
-    assert paths.data_splits == paths.project_root / "data" / "splits"
-    
     # Output paths
     assert paths.models == paths.project_root / "models"
     assert paths.reports_figures == paths.project_root / "reports" / "figures"
@@ -62,8 +58,6 @@ def test_paths_create_directories(tmp_path: Path) -> None:
         dataset_sourcedata=tmp_path / "Datasets" / "MI3" / "sourcedata",
         dataset_derivatives=tmp_path / "Datasets" / "MI3" / "derivatives",
         dataset_code=tmp_path / "Datasets" / "MI3" / "code",
-        data_tensors=tmp_path / "data" / "tensors",
-        data_splits=tmp_path / "data" / "splits",
         models=tmp_path / "models",
         reports_figures=tmp_path / "reports" / "figures",
         reports_metrics=tmp_path / "reports" / "metrics",
@@ -74,8 +68,6 @@ def test_paths_create_directories(tmp_path: Path) -> None:
     test_paths.create_directories()
     
     # Verify directories exist
-    assert test_paths.data_tensors.exists()
-    assert test_paths.data_splits.exists()
     assert test_paths.models.exists()
     assert test_paths.reports_figures.exists()
     assert test_paths.reports_metrics.exists()
