@@ -119,7 +119,7 @@ if (Test-Path .\.venv) {
 }
 
 try {
-    & uv sync 2>&1 | Write-Verbose
+    & uv sync --all-extras 2>&1 | Write-Verbose
     
     if ($LASTEXITCODE -eq 0 -and (Test-Path .\.venv\Scripts\Activate.ps1)) {
         Write-Success "uv sync completed successfully"
@@ -133,7 +133,7 @@ try {
         Write-Host "Attempting recovery: removing .venv and retrying..." -ForegroundColor Yellow
         if (Remove-VenvForcefully) {
             try {
-                & uv sync 2>&1 | Write-Verbose
+                & uv sync --all-extras 2>&1 | Write-Verbose
                 if ($LASTEXITCODE -eq 0 -and (Test-Path .\.venv\Scripts\Activate.ps1)) {
                     Write-Success "uv sync completed successfully on retry"
                     $script:PartialSuccess.SyncCompleted = $true
@@ -447,24 +447,24 @@ if ($skipVenvCreation -eq $true) {
         Write-Host "`nFalling back to 'uv sync'..." -ForegroundColor Yellow
         try {
             if (Remove-VenvForcefully) {
-                Write-Host "Running 'uv sync'..." -ForegroundColor Yellow
-                $syncOutput = & uv sync 2>&1
+                Write-Host "Running 'uv sync --all-extras'..." -ForegroundColor Yellow
+                $syncOutput = & uv sync --all-extras 2>&1
                 
                 if ($LASTEXITCODE -eq 0 -and (Test-Path .\.venv\Scripts\Activate.ps1)) {
                     Write-Success "uv sync completed successfully"
                     $script:PartialSuccess.VenvCreated = $true
                     $venvCreationSuccess = $true
                 } else {
-                    Write-Error-Custom "uv sync failed or created invalid venv"
+                    Write-Error-Custom "uv sync --all-extras failed or created invalid venv"
                     if ($syncOutput) {
                         Write-Host "Error details: $syncOutput" -ForegroundColor Red
                     }
-                    Write-Host "Please run manually: uv sync" -ForegroundColor Yellow
+                    Write-Host "Please run manually: uv sync --all-extras" -ForegroundColor Yellow
                     exit 1
                 }
             } else {
                 Write-Error-Custom "Could not remove .venv for fallback"
-                Write-Host "Please manually run: Remove-Item .\.venv -Recurse -Force; uv sync" -ForegroundColor Yellow
+                Write-Host "Please manually run: Remove-Item .\\.venv -Recurse -Force; uv sync --all-extras" -ForegroundColor Yellow
                 exit 1
             }
         } catch {
