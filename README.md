@@ -1,4 +1,4 @@
-# MI3 EEG Motor Imagery Classification
+# Same Limb MI-EEG LENet Classifier
 
 A modular, production-ready PyTorch package for classifying motor imagery EEG signals from the MI3 dataset using deep learning.
 
@@ -20,7 +20,7 @@ Motor-imagery EEG trials from the MI3 dataset are classified with the LENet arch
 ## 📁 Project Structure
 
 ```
-MI-EEG-Final-ML-Proj/
+Same-Limb-MI-EEG-LENet-Classifier/
 ├── src/mi3_eeg/              # Main package
 │   ├── config.py             # Configuration and paths
 │   ├── logger.py             # Centralized logging
