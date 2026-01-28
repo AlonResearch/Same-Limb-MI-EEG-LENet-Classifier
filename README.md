@@ -7,6 +7,7 @@ A modular, production-ready PyTorch package for classifying motor imagery EEG si
 Motor-imagery EEG trials from the MI3 dataset are classified with the LENet architecture:
 
 - **LENet** – A CNN that is lightweight and efficient by using Convolutional Classification Block with multi-scale temporal, spatial, and feature fusion layers
+  - **Reference:** [https://doi.org/10.1016/j.bspc.2024.107000](https://doi.org/10.1016/j.bspc.2024.107000)
 
 **Key Features:**
 - ✅ Modular, testable architecture following best practices
@@ -491,6 +492,8 @@ print(f"Accuracy: {results.overall_accuracy * 100:.2f}%")
 ## 📊 Dataset
 
 ### MI3 Dataset Structure (BIDS Format)
+
+**Dataset Reference:** Ma, X., Qiu, S. & He, H. Multi-channel EEG recording during motor imagery of different joints from the same limb. *Sci Data* 7, 191 (2020). [https://doi.org/10.1038/s41597-020-0535-2](https://doi.org/10.1038/s41597-020-0535-2)
 
 The project expects BIDS-formatted MI3 data in `Datasets/MI3/` and only use the already preprocessed data from the daset `Datasets/MI3/derivatives`:
 
