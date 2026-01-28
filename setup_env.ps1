@@ -119,7 +119,7 @@ if (Test-Path .\.venv) {
 }
 
 try {
-    & uv sync --all-extras 2>&1 | Write-Verbose
+    & uv sync --all-extras --index-url https://download.pytorch.org/whl/cu124 2>&1 | Write-Verbose
     
     if ($LASTEXITCODE -eq 0 -and (Test-Path .\.venv\Scripts\Activate.ps1)) {
         Write-Success "uv sync completed successfully"
@@ -133,7 +133,7 @@ try {
         Write-Host "Attempting recovery: removing .venv and retrying..." -ForegroundColor Yellow
         if (Remove-VenvForcefully) {
             try {
-                & uv sync --all-extras 2>&1 | Write-Verbose
+                & uv sync --all-extras --index-url https://download.pytorch.org/whl/cu124 2>&1 | Write-Verbose
                 if ($LASTEXITCODE -eq 0 -and (Test-Path .\.venv\Scripts\Activate.ps1)) {
                     Write-Success "uv sync completed successfully on retry"
                     $script:PartialSuccess.SyncCompleted = $true
@@ -181,29 +181,16 @@ try {
 }
 
 # --- Install/Update PyTorch with CUDA ---
-Write-Step "Checking PyTorch installation..."
+Write-Step "Verifying PyTorch installation..."
 $torchInstalled = Check-PackageInstalled "torch"
 
-if ($torchInstalled -and -not $ForceReinstall) {
-    Write-Success "PyTorch already installed (skipping)"
+if ($torchInstalled) {
+    Write-Success "PyTorch installed (with CUDA 12.4 support)"
     $script:PartialSuccess.TorchInstalled = $true
 } else {
-    if ($ForceReinstall -and $torchInstalled) {
-        Write-Host "Force reinstall requested. Uninstalling existing PyTorch..." -ForegroundColor Yellow
-        pip uninstall torch -y 2>&1 | Write-Verbose
-    }
-    
-    Write-Step "Installing PyTorch with CUDA 12.4..."
-    try {
-        pip install torch --index-url https://download.pytorch.org/whl/cu124 2>&1 | Write-Verbose
-        Write-Success "PyTorch installed successfully"
-        $script:PartialSuccess.TorchInstalled = $true
-    } catch {
-        Write-Error-Custom "PyTorch installation failed: $_"
-        Write-Host "PyTorch installation failed, but base environment is ready." -ForegroundColor Yellow
-        Write-Host "You can retry with: pip install torch --index-url https://download.pytorch.org/whl/cu124" -ForegroundColor Yellow
-        exit 1
-    }
+    Write-Error-Custom "PyTorch installation verification failed"
+    Write-Host "PyTorch was not installed. Verify with: python -c 'import torch; print(torch.__version__)'" -ForegroundColor Yellow
+    exit 1
 }
 
 # === VERIFICATION ===
@@ -448,7 +435,7 @@ if ($skipVenvCreation -eq $true) {
         try {
             if (Remove-VenvForcefully) {
                 Write-Host "Running 'uv sync --all-extras'..." -ForegroundColor Yellow
-                $syncOutput = & uv sync --all-extras 2>&1
+                $syncOutput = & uv sync --all-extras --index-url https://download.pytorch.org/whl/cu124 2>&1
                 
                 if ($LASTEXITCODE -eq 0 -and (Test-Path .\.venv\Scripts\Activate.ps1)) {
                     Write-Success "uv sync completed successfully"
