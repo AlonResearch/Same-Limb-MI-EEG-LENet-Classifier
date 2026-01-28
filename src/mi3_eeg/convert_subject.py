@@ -7,12 +7,12 @@ to standardized format (all_data/all_label) with proper naming convention.
 from pathlib import Path
 import sys
 
-from mi3_eeg.preprocessing import preprocess_and_save
+from mi3_eeg.dataformatter import format_and_save
 from mi3_eeg.logger import setup_logger, logger
 
 
 def main():
-    """Main conversion function."""
+    """Main formatting function."""
     # Setup logging
     setup_logger()
     
@@ -27,7 +27,7 @@ def main():
     subject_id = sys.argv[2] if len(sys.argv) > 2 else None
     
     logger.info("=" * 80)
-    logger.info("MI3 Raw Data Conversion Script")
+    logger.info("MI3 Raw Data Formatting Script")
     logger.info("=" * 80)
     logger.info(f"Input file: {input_file}")
     
@@ -38,20 +38,20 @@ def main():
         sys.exit(1)
     
     try:
-        # Convert the file
-        output_file = preprocess_and_save(
+        # Format the file
+        output_file = format_and_save(
             input_path=input_file,
             subject_id=subject_id
         )
         
         logger.info("=" * 80)
-        logger.info("✓ Conversion completed successfully!")
+        logger.info("✓ Formatting completed successfully!")
         logger.info(f"  Input:  {input_file}")
         logger.info(f"  Output: {output_file}")
         logger.info("=" * 80)
         
     except Exception as e:
-        logger.error(f"Conversion failed: {e}", exc_info=True)
+        logger.error(f"Formatting failed: {e}", exc_info=True)
         sys.exit(1)
 
 

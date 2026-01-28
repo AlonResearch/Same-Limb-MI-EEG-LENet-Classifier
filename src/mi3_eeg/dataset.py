@@ -84,7 +84,7 @@ def load_mat_from_derivatives(
     mat_data = scio.loadmat(str(mat_path))
     
     # Detect format and load data accordingly
-    from mi3_eeg.preprocessing import detect_format, convert_raw_format
+    from mi3_eeg.dataformatter import detect_format, convert_raw_format
     
     data_format = detect_format(mat_data)
     logger.info(f"Detected format: {data_format}")

@@ -59,7 +59,7 @@ for i, (batch_data, batch_labels) in enumerate(dataloader):
         break
 
 print("\n" + "=" * 80)
-print("✓ All tests passed!")
+print("ALL TESTS PASSED!")
 print("=" * 80)
 print(f"\nSummary:")
 print(f"  - Converted file loaded successfully")
@@ -67,13 +67,3 @@ print(f"  - Labels are correct: 0 (Rest), 1 (Elbow), 2 (Hand)")
 print(f"  - Sampling rate: {data_bundle.sample_rate}Hz")
 print(f"  - Total trials: {data_bundle.data.shape[0]}")
 print(f"  - Balanced distribution: {data_bundle.class_distribution}")
-
-
-# Test by iterating through a few batches
-print(f"\nTesting dataloader with {len(dataloader)} batches...")
-for i, (batch_data, batch_labels) in enumerate(dataloader):
-    print(f"Batch {i}: data shape={batch_data.shape}, labels shape={batch_labels.shape}")
-    if i >= 2:  # Just show first 3 batches
-        break
-
-print("\n✅ Dataloader test successful!")
