@@ -21,8 +21,6 @@ Motor-imagery EEG trials from the MI3 dataset are classified with the LENet arch
 
 ```
 Same-Limb-MI-EEG-LENet-Classifier/
-├── .pytest_cache/            # Pytest cache directory
-├── .venv/                    # Virtual environment
 ├── Datasets/                 # BIDS-formatted MI3 dataset
 │   └── MI3/
 │       └── derivatives/      # Preprocessed .mat files (not in repo)
@@ -52,13 +50,11 @@ Same-Limb-MI-EEG-LENet-Classifier/
 │       ├── train.py          # Training orchestration
 │       └── visualization.py  # Plotting and visualization
 ├── tests/                    # Unit tests (63 tests)
-├── .gitignore                # Git ignore file
 ├── OpenVScodeHere.bat        # Batch file to open VS Code
 ├── pyproject.toml            # Project metadata & dependencies
 ├── README.md                 # This file
 ├── setup_env.ps1             # Windows setup script
-├── setup_env.sh              # Linux/Mac setup script
-└── uv.lock                   # UV lock file
+└── setup_env.sh              # Linux/Mac setup script
 ```
 
 **Note:** Raw sourcedata files and large dataset files are not tracked in the repository due to size constraints. Download preprocessed `.mat` files separately (see Dataset section below).
