@@ -21,17 +21,6 @@ Motor-imagery EEG trials from the MI3 dataset are classified with the LENet arch
 
 ```
 Same-Limb-MI-EEG-LENet-Classifier/
-├── run_all_subjects.py       # Batch processing script for all subjects
-├── src/mi3_eeg/              # Main package
-│   ├── config.py             # Configuration and paths
-│   ├── logger.py             # Centralized logging
-│   ├── dataset.py            # Data loading and preprocessing
-│   ├── model.py              # Neural network architectures
-│   ├── train.py              # Training orchestration
-│   ├── evaluation.py         # Metrics and evaluation
-│   ├── visualization.py      # Plotting and visualization
-│   └── main.py               # Pipeline orchestrator
-├── tests/                    # Unit tests (63 tests)
 ├── Datasets/                 # BIDS-formatted MI3 dataset
 │   └── MI3/
 │       └── derivatives/      # Preprocessed .mat files (not in repo)
@@ -39,17 +28,28 @@ Same-Limb-MI-EEG-LENet-Classifier/
 │   ├── sub-001_lenet_best.pth
 │   ├── sub-001_lenet_final.pth
 │   └── ...                   # Models for all 24 subjects
+├── Notebooks/                # Exploratory notebooks
+├── pyproject.toml            # Project metadata & dependencies
 ├── reports/                  # Training outputs
 │   ├── figures/              # Plots and visualizations
 │   │   ├── sub-XXX_lenet_confusion_matrix.png
 │   │   ├── sub-XXX_lenet_training_curves.png
 │   │   └── ...
-│   ├── metrics/              # Evaluation results (JSON)
-│   │   ├── sub-XXX_lenet_results.json
-│   │   └── ...               # Results for all 24 subjects
-│   └── logs/                 # Training logs
-├── Notebooks/                # Exploratory notebooks
-└── pyproject.toml            # Project metadata & dependencies
+│   ├── logs/                 # Training logs
+│   └── metrics/              # Evaluation results (JSON)
+│       ├── sub-XXX_lenet_results.json
+│       └── ...               # Results for all 24 subjects
+├── src/mi3_eeg/              # Main package
+│   ├── config.py             # Configuration and paths
+│   ├── dataset.py            # Data loading and preprocessing
+│   ├── evaluation.py         # Metrics and evaluation
+│   ├── logger.py             # Centralized logging
+│   ├── main.py               # Pipeline orchestrator
+│   ├── model.py              # Neural network architectures
+│   ├── run_all_subjects.py   # Batch processing script for all subjects
+│   ├── train.py              # Training orchestration
+│   └── visualization.py      # Plotting and visualization
+└── tests/                    # Unit tests (63 tests)
 ```
 
 **Note:** Raw sourcedata files and large dataset files are not tracked in the repository due to size constraints. Download preprocessed `.mat` files separately (see Dataset section below).
@@ -317,7 +317,7 @@ pip install -e ".[test]"
 
 To train models on all subjects in the dataset:
 ```bash
-python run_all_subjects.py
+python -m mi3_eeg.run_all_subjects
 ```
 
 This script will:
@@ -381,7 +381,7 @@ python -m mi3_eeg.main --device cpu
 
 Process all subjects at once:
 ```bash
-python run_all_subjects.py
+python -m mi3_eeg.run_all_subjects
 ```
 
 ### Troubleshooting Installation
