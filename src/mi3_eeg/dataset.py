@@ -32,6 +32,7 @@ class EEGDataBundle:
         channel_count: Number of EEG channels.
         num_classes: Number of motor imagery classes.
         sample_rate: Sampling rate in Hz.
+        ch_names: List of channel names.
         class_distribution: Dictionary mapping class names to counts.
     """
 
@@ -40,7 +41,13 @@ class EEGDataBundle:
     channel_count: int
     num_classes: int
     sample_rate: int
+    ch_names: list[str]
     class_distribution: dict[str, int]
+    
+    @property
+    def sfreq(self) -> int:
+        """Alias for sample_rate for compatibility with MNE-style code."""
+        return self.sample_rate
 
 
 def load_mat_from_derivatives(
@@ -102,12 +109,20 @@ def load_mat_from_derivatives(
     num_classes = len(np.unique(all_label))
     class_dist = _calculate_class_distribution(all_label)
     
+    # Generate channel names (assuming standard 10-20 system for 62 channels)
+    # If channel names exist in mat file, use them, otherwise generate generic names
+    if "ch_names" in mat_data:
+        ch_names = [str(name[0]) for name in mat_data["ch_names"][0]]
+    else:
+        ch_names = [f"Ch{i+1}" for i in range(channel_count)]
+    
     return EEGDataBundle(
         data=all_data,
         labels=all_label,
         channel_count=channel_count,
         num_classes=num_classes,
         sample_rate=90,  # From MI3 dataset specification
+        ch_names=ch_names,
         class_distribution=class_dist,
     )
 

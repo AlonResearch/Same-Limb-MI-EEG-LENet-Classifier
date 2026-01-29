@@ -11,18 +11,11 @@ Datasets/MI3/derivatives/sub-011_eeg.mat
 Datasets/MI3/derivatives/sub-011_eeg90hz.mat
 Datasets/MI3/sourcedata/sub-011/ses-01/eeg/sub-011_ses-01_task-motorimagery_eeg.cnt
 Datasets/MI3/sourcedata/sub-011/ses-02/eeg/sub-011_ses-02_task-motorimagery_eeg.cnt
-Docs/EEG 2 Class ML PROJECT.docx
-Docs/EEG 2 Class ML PROJECT.pdf
-Docs/Project_Structure_Requirements_Guideline.md
-Docs/ThesisSlides.pdf
-Docs/Workshop project.pdf
-Notebooks/MI3_CNN.ipynb
 models/lenet_best.pth
 models/lenet_fcl_best.pth
 models/lenet_fcl_final.pth
 models/lenet_final.pth
 reports/figures/lenet_confusion_matrix.png
-reports/figures/lenet_confusion_matrix_custom.png
 reports/figures/lenet_training_curves.png
 reports/metrics/lenet_fcl_results.json
 reports/metrics/lenet_results.json

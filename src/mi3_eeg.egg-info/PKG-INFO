@@ -1,7 +1,7 @@
 Metadata-Version: 2.4
 Name: mi3-eeg
 Version: 1.0.0
-Summary: MI3 EEG Motor Imagery Classification using Deep Learning
+Summary: Same Limb MI-EEG LENet Classifier - Motor Imagery Classification for Same-Limb Movement using LENet Architecture
 Author: MI3-EEG Team
 Requires-Python: >=3.11
 Description-Content-Type: text/markdown
@@ -15,6 +15,7 @@ Requires-Dist: ipykernel>=7.1.0
 Provides-Extra: dev
 Requires-Dist: mi3-eeg[test]; extra == "dev"
 Requires-Dist: mi3-eeg[lint]; extra == "dev"
+Requires-Dist: mi3-eeg[notebook]; extra == "dev"
 Provides-Extra: test
 Requires-Dist: pytest>=8.0; extra == "test"
 Requires-Dist: pytest-cov>=5.0; extra == "test"
@@ -23,8 +24,12 @@ Requires-Dist: ruff>=0.4.0; extra == "lint"
 Requires-Dist: mypy>=1.9; extra == "lint"
 Provides-Extra: notebook
 Requires-Dist: jupyterlab>=4.0; extra == "notebook"
+Requires-Dist: plotly>=5.18.0; extra == "notebook"
+Requires-Dist: mne>=1.6.0; extra == "notebook"
+Requires-Dist: ipywidgets>=8.1.0; extra == "notebook"
+Requires-Dist: scikit-learn>=1.3; extra == "notebook"
 
-# MI3 EEG Motor Imagery Classification
+# Same Limb MI-EEG LENet Classifier
 
 A modular, production-ready PyTorch package for classifying motor imagery EEG signals from the MI3 dataset using deep learning.
 
@@ -33,6 +38,7 @@ A modular, production-ready PyTorch package for classifying motor imagery EEG si
 Motor-imagery EEG trials from the MI3 dataset are classified with the LENet architecture:
 
 - **LENet** – A CNN that is lightweight and efficient by using Convolutional Classification Block with multi-scale temporal, spatial, and feature fusion layers
+  - **Reference:** [https://doi.org/10.1016/j.bspc.2024.107000](https://doi.org/10.1016/j.bspc.2024.107000)
 
 **Key Features:**
 - ✅ Modular, testable architecture following best practices
@@ -41,12 +47,12 @@ Motor-imagery EEG trials from the MI3 dataset are classified with the LENet arch
 - ✅ Automated training with early stopping
 - ✅ Rich visualization suite
 - ✅ GPU/CUDA acceleration support
-- ✅ 71 unit tests ensuring reliability (including CUDA tests)
+- ✅ 63 unit tests ensuring reliability (including CUDA tests)
 
 ## 📁 Project Structure
 
 ```
-MI-EEG-Final-ML-Proj/
+Same-Limb-MI-EEG-LENet-Classifier/
 ├── src/mi3_eeg/              # Main package
 │   ├── config.py             # Configuration and paths
 │   ├── logger.py             # Centralized logging
@@ -56,15 +62,13 @@ MI-EEG-Final-ML-Proj/
 │   ├── evaluation.py         # Metrics and evaluation
 │   ├── visualization.py      # Plotting and visualization
 │   └── main.py               # Pipeline orchestrator
-├── tests/                    # Unit tests (60+ tests)
+├── tests/                    # Unit tests (63 tests)
 ├── Datasets/                 # BIDS-formatted MI3 dataset
 │   └── MI3/
 │       ├── sourcedata/       # Raw .cnt files (immutable)
 │       ├── derivatives/      # Preprocessed .mat files
 │       └── code/             # MATLAB preprocessing scripts
 ├── data/                     # PyTorch processing cache
-│   ├── tensors/              # Cached tensors
-│   └── splits/               # Train/test splits
 ├── models/                   # Saved model weights
 ├── reports/                  # Training outputs
 │   ├── figures/              # Plots and visualizations
@@ -85,14 +89,14 @@ MI-EEG-Final-ML-Proj/
 - **Storage:** 2GB for dependencies + dataset
 
 ### Core Dependencies
-- **PyTorch:** 2.5.1+ with CUDA 12.4 support
-- **NumPy:** 2.4+ for numerical operations
-- **scikit-learn:** 1.8+ for metrics and data splitting
-- **matplotlib:** 3.10+ for visualizations
-- **scipy:** 1.16+ for .mat file loading
-- **pandas:** 2.3+ for data handling
+- **PyTorch:** 2.5.1+ with CUDA 12.4 support (configured via `pyproject.toml`)
+- **NumPy:** 1.24+ for numerical operations
+- **scikit-learn:** 1.3+ for metrics and data splitting
+- **matplotlib:** 3.7+ for visualizations
+- **scipy:** 1.11+ for .mat file loading
+- **pandas:** 2.0+ for data handling
 
-All dependencies are managed through `pyproject.toml` and automatically installed.
+PyTorch with CUDA 12.4 is automatically installed through the custom PyTorch index configured in `pyproject.toml`.
 
 ## 🚀 Quick Start
 
@@ -117,25 +121,20 @@ pip install uv
 
 # Clone and setup
 git clone <repository-url>
-cd MI-EEG-Final-ML-Proj
+cd Same-Limb-MI-EEG-LENet-Classifier
 .\setup_env.ps1
 ```
 
 The setup script will:
 - ✅ Verify uv is installed (or install if missing)
-- ✅ Create virtual environment
-- ✅ Install PyTorch with CUDA 12.4
-- ✅ Install all dependencies
+- ✅ Create virtual environment with `uv sync`
+- ✅ Install all dependencies (including PyTorch CUDA 12.4)
+- ✅ Install optional dependencies (test, lint, notebook)
 - ✅ Verify installation and CUDA
 
 **After setup completes, activate the virtual environment:**
 ```powershell
 .\.venv\Scripts\Activate.ps1
-```
-
-**If the setup script is interrupted, finish install manually:**
-```powershell
-uv pip install -e .
 ```
 
 **VS Code users:** Select the Python interpreter from `.venv` (Ctrl+Shift+P → "Python: Select Interpreter")
@@ -151,26 +150,21 @@ pip install uv
 
 # Clone and setup
 git clone <repository-url>
-cd MI-EEG-Final-ML-Proj
+cd Same-Limb-MI-EEG-LENet-Classifier
 chmod +x setup_env.sh
 ./setup_env.sh
 ```
 
 The setup script will:
 - ✅ Verify uv is installed (or install if missing)
-- ✅ Create virtual environment
-- ✅ Install PyTorch with CUDA 12.4
-- ✅ Install all dependencies
+- ✅ Create virtual environment with `uv sync`
+- ✅ Install all dependencies (including PyTorch CUDA 12.4)
+- ✅ Install optional dependencies (test, lint, notebook)
 - ✅ Verify installation and CUDA
 
 **After setup completes, activate the virtual environment:**
 ```bash
 source .venv/bin/activate
-```
-
-**If the setup script is interrupted, finish install manually:**
-```bash
-uv pip install -e .
 ```
 
 **VS Code users:** Select the Python interpreter from `.venv` (Cmd+Shift+P → "Python: Select Interpreter")
@@ -227,7 +221,7 @@ If this fails, see the troubleshooting section above.
 2. **Clone the repository:**
 ```powershell
 git clone <repository-url>
-cd MI-EEG-Final-ML-Proj
+cd Same-Limb-MI-EEG-LENet-Classifier
 ```
 
 3. **Create and activate virtual environment:**
@@ -236,18 +230,12 @@ uv venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-4. **Install PyTorch with CUDA support:**
+4. **Install all dependencies (includes PyTorch CUDA 12.4):**
 ```powershell
-# For CUDA 12.4
-uv pip install torch --index-url https://download.pytorch.org/whl/cu124
+uv sync --all-extras
 ```
 
-5. **Install the package with dependencies:**
-```powershell
-uv pip install -e ".[test]"
-```
-
-6. **Verify installation:**
+5. **Verify installation:**
 ```powershell
 # Check package
 python -c "import mi3_eeg; print(f'mi3_eeg v{mi3_eeg.__version__}')"
@@ -273,7 +261,7 @@ If this fails, see the troubleshooting section above.
 2. **Clone the repository:**
 ```bash
 git clone <repository-url>
-cd MI-EEG-Final-ML-Proj
+cd Same-Limb-MI-EEG-LENet-Classifier
 ```
 
 3. **Create and activate virtual environment:**
@@ -282,18 +270,12 @@ uv venv
 source .venv/bin/activate
 ```
 
-4. **Install PyTorch with CUDA support:**
+4. **Install all dependencies (includes PyTorch CUDA 12.4):**
 ```bash
-# For CUDA 12.4
-uv pip install torch --index-url https://download.pytorch.org/whl/cu124
+uv sync --all-extras
 ```
 
-5. **Install the package with dependencies:**
-```bash
-uv pip install -e ".[test]"
-```
-
-6. **Verify installation:**
+5. **Verify installation:**
 ```bash
 # Check package
 python -c "import mi3_eeg; print(f'mi3_eeg v{mi3_eeg.__version__}')"
@@ -452,14 +434,33 @@ source .venv/bin/activate  # Linux/Mac
 <details>
 <summary><b>❌ Issue: PyTorch CPU version installed instead of CUDA</b></summary>
 
-Uninstall and reinstall the CUDA version:
-```bash
-# Uninstall CPU version
-uv pip uninstall torch
+The project is configured to automatically install PyTorch with CUDA 12.4 support through the PyTorch index specified in `pyproject.toml`. If you're seeing the CPU version:
 
-# Install CUDA version
-uv pip install torch --index-url https://download.pytorch.org/whl/cu124
+```bash
+# Check current PyTorch version
+python -c "import torch; print(torch.__version__)"
+
+# Should show something like: 2.6.0+cu124
+
+# If it shows +cpu instead, reinstall:
+# 1. Remove venv
+rm -rf .venv  # Linux/Mac
+Remove-Item -Recurse -Force .venv  # Windows
+
+# 2. Run setup script again
+./setup_env.sh  # Linux/Mac
+.\setup_env.ps1  # Windows
 ```
+
+The `pyproject.toml` contains:
+```toml
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+```
+
+This ensures PyTorch with CUDA 12.4 is always installed automatically.
 
 </details>
 
@@ -468,20 +469,30 @@ uv pip install torch --index-url https://download.pytorch.org/whl/cu124
 
 Verify CUDA installation and configuration:
 ```bash
-# Verify CUDA is installed on system
+# 1. Verify CUDA is installed on system
 nvidia-smi
 
-# Check PyTorch CUDA support
-python -c "import torch; print(f'CUDA Available: {torch.cuda.is_available()}'); print(f'CUDA Version: {torch.version.cuda}')"
+# 2. Check PyTorch version and CUDA support
+python -c "import torch; print(f'PyTorch: {torch.__version__}'); print(f'CUDA Available: {torch.cuda.is_available()}'); print(f'CUDA Version: {torch.version.cuda if torch.cuda.is_available() else "N/A"}')"
+
+# Expected output:
+# PyTorch: 2.6.0+cu124
+# CUDA Available: True
+# CUDA Version: 12.4
 
 # If CUDA not detected:
-# 1. Reinstall torch with correct CUDA index
-uv pip uninstall torch
-uv pip install torch --index-url https://download.pytorch.org/whl/cu124
-
-# 2. Verify NVIDIA drivers are up-to-date
+# 1. Check NVIDIA drivers are up-to-date (requires 525+ for CUDA 12.4)
 nvidia-smi  # Check driver version at top
+
+# 2. Verify PyTorch CUDA build is installed (should show +cu124)
+python -c "import torch; print(torch.__version__)"
+
+# 3. If showing CPU build (+cpu), reinstall environment
+rm -rf .venv && ./setup_env.sh  # Linux/Mac
+Remove-Item -Recurse -Force .venv; .\setup_env.ps1  # Windows
 ```
+
+**Note:** The project automatically configures PyTorch with CUDA 12.4 through `pyproject.toml`. The setup scripts handle this automatically.
 
 </details>
 
@@ -513,20 +524,20 @@ print(f"Accuracy: {results.overall_accuracy * 100:.2f}%")
 
 ### MI3 Dataset Structure (BIDS Format)
 
-The project expects BIDS-formatted MI3 data in `Datasets/MI3/`:
+**Dataset Reference:** Ma, X., Qiu, S. & He, H. Multi-channel EEG recording during motor imagery of different joints from the same limb. *Sci Data* 7, 191 (2020). [https://doi.org/10.1038/s41597-020-0535-2](https://doi.org/10.1038/s41597-020-0535-2)
 
-- **sourcedata/** – Raw CNT acquisitions (immutable)
+The project expects BIDS-formatted MI3 data in `Datasets/MI3/` and only use the already preprocessed data from the daset `Datasets/MI3/derivatives`:
+
 - **derivatives/** – Preprocessed MATLAB .mat files
-  - `sub-011_eeg90hz.mat` – 90Hz downsampled, bandpass filtered (7-35Hz)
+  - `sub-011_eeg90hz.mat` – 90Hz downsampled, bandpass filtered (7-35Hz) example data for github test
   - Shape: (965 samples, 62 channels, 360 timepoints)
   - Classes: Rest (0), Elbow (1), Hand (2)
-- **code/** – MATLAB preprocessing scripts (`MI3_process.m`)
+
 
 ### Data Processing Pipeline
 
-1. Raw CNT files → MATLAB preprocessing → .mat files (derivatives)
-2. Python loads from derivatives → Class balancing → PyTorch tensors
-3. Train/test split (80/20) → DataLoaders → Model training
+1. Python loads from derivatives → Class balancing → PyTorch tensors
+2. Train/test split (80/20) → DataLoaders → Model training
 
 ## 🧪 Development
 
