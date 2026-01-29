@@ -21,6 +21,7 @@ Motor-imagery EEG trials from the MI3 dataset are classified with the LENet arch
 
 ```
 Same-Limb-MI-EEG-LENet-Classifier/
+├── run_all_subjects.py       # Batch processing script for all subjects
 ├── src/mi3_eeg/              # Main package
 │   ├── config.py             # Configuration and paths
 │   ├── logger.py             # Centralized logging
@@ -33,18 +34,25 @@ Same-Limb-MI-EEG-LENet-Classifier/
 ├── tests/                    # Unit tests (63 tests)
 ├── Datasets/                 # BIDS-formatted MI3 dataset
 │   └── MI3/
-│       ├── sourcedata/       # Raw .cnt files (immutable)
-│       ├── derivatives/      # Preprocessed .mat files
-│       └── code/             # MATLAB preprocessing scripts
-├── data/                     # PyTorch processing cache
-├── models/                   # Saved model weights
+│       └── derivatives/      # Preprocessed .mat files (not in repo)
+├── models/                   # Saved model weights (subject-specific)
+│   ├── sub-001_lenet_best.pth
+│   ├── sub-001_lenet_final.pth
+│   └── ...                   # Models for all 24 subjects
 ├── reports/                  # Training outputs
 │   ├── figures/              # Plots and visualizations
+│   │   ├── sub-XXX_lenet_confusion_matrix.png
+│   │   ├── sub-XXX_lenet_training_curves.png
+│   │   └── ...
 │   ├── metrics/              # Evaluation results (JSON)
+│   │   ├── sub-XXX_lenet_results.json
+│   │   └── ...               # Results for all 24 subjects
 │   └── logs/                 # Training logs
 ├── Notebooks/                # Exploratory notebooks
 └── pyproject.toml            # Project metadata & dependencies
 ```
+
+**Note:** Raw sourcedata files and large dataset files are not tracked in the repository due to size constraints. Download preprocessed `.mat` files separately (see Dataset section below).
 
 ## 💻 Environment & Requirements
 
@@ -551,17 +559,19 @@ print(f"Accuracy: {results.overall_accuracy * 100:.2f}%")
    └── sub-011_eeg90hz.mat (optional)
    ```
 
-**Note:** A small example file (`sub-011_eeg90hz.mat`) is included in the repository for testing purposes. This file contains 90Hz downsampled, bandpass filtered (7-35Hz) data with shape (965 samples, 62 channels, 360 timepoints) and classes: Rest (0), Elbow (1), Hand (2).
+**Note:** A small example file (`sub-011_eeg90hz.mat`) may be included in the repository for testing purposes. This file contains 90Hz downsampled, bandpass filtered (7-35Hz) data with shape (965 samples, 62 channels, 360 timepoints) and classes: Rest (0), Elbow (1), Hand (2).
 
 ### MI3 Dataset Structure (BIDS Format)
 
 The project expects BIDS-formatted MI3 data in `Datasets/MI3/`:
 
-- **derivatives/** – Preprocessed MATLAB .mat files (200Hz sampling)
+- **derivatives/** – Preprocessed MATLAB .mat files (200Hz sampling, not tracked in git)
   - `sub-XXX_eeg200hz.mat` – Preprocessed EEG data files
   - Shape: (~900 samples, 62 channels, 800 timepoints)
   - Classes: Rest (0), Elbow (1), Hand (2)
-- **sourcedata/** – Raw .cnt files (optional, not required for training)
+  - **Important:** These files are not included in the repository due to size. Download separately (see above).
+
+**Note:** Raw sourcedata files (`.cnt` format) are not required for training and are not included in the repository.
 
 ### Data Processing Pipeline
 
