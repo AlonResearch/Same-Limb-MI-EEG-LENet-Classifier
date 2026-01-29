@@ -305,6 +305,23 @@ pip install -e ".[test]"
 
 **Important:** Always ensure your virtual environment is activated before running commands!
 
+#### Processing All Subjects
+
+To train models on all subjects in the dataset:
+```bash
+python run_all_subjects.py
+```
+
+This script will:
+- ✅ Automatically detect all `*_eeg200hz.mat` files in the derivatives folder
+- ✅ Skip subjects that have already been processed
+- ✅ Train each subject with 50 epochs
+- ✅ Save results to `reports/metrics/sub-XXX_lenet_results.json`
+- ✅ Generate figures in `reports/figures/`
+- ✅ Save trained models in `models/sub-XXX_lenet_*.pth`
+
+The script will display progress and automatically continue if a subject fails.
+
 #### Activating the Virtual Environment
 
 <details>
@@ -339,19 +356,24 @@ source .venv/bin/activate
 
 #### Running the Pipeline
 
-Train both models with default settings (GPU):
+Train a single subject with default settings (GPU):
 ```bash
 python -m mi3_eeg.main
 ```
 
-Train specific model with custom settings:
+Train specific subject file with custom settings:
 ```bash
-python -m mi3_eeg.main --models lenet --epochs 500 --device cuda
+python -m mi3_eeg.main --subject-file sub-001_eeg200hz.mat --epochs 50 --device cuda
 ```
 
 Use CPU if GPU is not available:
 ```bash
 python -m mi3_eeg.main --device cpu
+```
+
+Process all subjects at once:
+```bash
+python run_all_subjects.py
 ```
 
 ### Troubleshooting Installation
@@ -504,8 +526,10 @@ print(f"Accuracy: {results.overall_accuracy * 100:.2f}%")
 2. **Download preprocessed derivatives:**
    - Navigate to the dataset's `derivatives/` folder
    - Download the preprocessed `.mat` files (200Hz sampling rate):
-     - `sub-001_eeg200hz.mat` through `sub-025_eeg200hz.mat`
+     - `sub-001_eeg200hz.mat` through `sub-024_eeg200hz.mat` (24 subjects total)
    - Optional: Download `sub-011_eeg.mat` and `sub-011_eeg90hz.mat` for testing
+   
+   **Note:** As of January 2026, all 24 subjects (sub-001 through sub-024) have been processed with results available in `reports/metrics/`.
 
 3. **Place files in your local repository:**
    ```bash
@@ -522,8 +546,9 @@ print(f"Accuracy: {results.overall_accuracy * 100:.2f}%")
    ├── sub-001_eeg200hz.mat
    ├── sub-002_eeg200hz.mat
    ├── ...
-   ├── sub-025_eeg200hz.mat
-   └── sub-011_eeg90hz.mat (example file, included in repo)
+   ├── sub-024_eeg200hz.mat
+   ├── sub-011_eeg.mat (optional)
+   └── sub-011_eeg90hz.mat (optional)
    ```
 
 **Note:** A small example file (`sub-011_eeg90hz.mat`) is included in the repository for testing purposes. This file contains 90Hz downsampled, bandpass filtered (7-35Hz) data with shape (965 samples, 62 channels, 360 timepoints) and classes: Rest (0), Elbow (1), Hand (2).
@@ -581,14 +606,31 @@ mypy src/
 
 ## 📈 Results
 
-Typical performance on MI3 dataset (sub-011):
+### Completed Subjects
+
+**✅ All 24 subjects processed** (sub-001 through sub-024)
+
+Results are available in:
+- `reports/metrics/sub-XXX_lenet_results.json` - Detailed metrics for each subject
+- `reports/figures/sub-XXX_lenet_*.png` - Visualizations (confusion matrices, training curves)
+- `models/sub-XXX_lenet_*.pth` - Trained model weights
+
+### Typical Performance
+
+Performance on MI3 dataset varies by subject:
 
 | Model      | Overall Acc | Rest Acc | Elbow Acc | Hand Acc |
 |------------|-------------|----------|-----------|----------|
 | LENet (CCB)| ~75-80%     | ~98%     | ~50-60%   | ~65-75%  |
 
+**Training Configuration:**
+- Epochs: 50 per subject
+- Batch size: 64
+- Learning rate: 0.01
+- Early stopping: Enabled (patience: 50)
+- Device: CUDA (GPU acceleration)
 
-*Results vary based on random initialization and data splits.*
+*Results vary based on random initialization, data splits, and subject-specific characteristics.*
 
 ## 🔧 Configuration
 
