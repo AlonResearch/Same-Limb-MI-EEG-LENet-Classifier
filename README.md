@@ -21,6 +21,8 @@ Motor-imagery EEG trials from the MI3 dataset are classified with the LENet arch
 
 ```
 Same-Limb-MI-EEG-LENet-Classifier/
+├── .pytest_cache/            # Pytest cache directory
+├── .venv/                    # Virtual environment
 ├── Datasets/                 # BIDS-formatted MI3 dataset
 │   └── MI3/
 │       └── derivatives/      # Preprocessed .mat files (not in repo)
@@ -29,7 +31,6 @@ Same-Limb-MI-EEG-LENet-Classifier/
 │   ├── sub-001_lenet_final.pth
 │   └── ...                   # Models for all 24 subjects
 ├── Notebooks/                # Exploratory notebooks
-├── pyproject.toml            # Project metadata & dependencies
 ├── reports/                  # Training outputs
 │   ├── figures/              # Plots and visualizations
 │   │   ├── sub-XXX_lenet_confusion_matrix.png
@@ -39,17 +40,25 @@ Same-Limb-MI-EEG-LENet-Classifier/
 │   └── metrics/              # Evaluation results (JSON)
 │       ├── sub-XXX_lenet_results.json
 │       └── ...               # Results for all 24 subjects
-├── src/mi3_eeg/              # Main package
-│   ├── config.py             # Configuration and paths
-│   ├── dataset.py            # Data loading and preprocessing
-│   ├── evaluation.py         # Metrics and evaluation
-│   ├── logger.py             # Centralized logging
-│   ├── main.py               # Pipeline orchestrator
-│   ├── model.py              # Neural network architectures
-│   ├── run_all_subjects.py   # Batch processing script for all subjects
-│   ├── train.py              # Training orchestration
-│   └── visualization.py      # Plotting and visualization
-└── tests/                    # Unit tests (63 tests)
+├── src/                      # Source code
+│   └── mi3_eeg/              # Main package
+│       ├── config.py         # Configuration and paths
+│       ├── dataset.py        # Data loading and preprocessing
+│       ├── evaluation.py     # Metrics and evaluation
+│       ├── logger.py         # Centralized logging
+│       ├── main.py           # Pipeline orchestrator
+│       ├── model.py          # Neural network architectures
+│       ├── run_all_subjects.py  # Batch processing script for all subjects
+│       ├── train.py          # Training orchestration
+│       └── visualization.py  # Plotting and visualization
+├── tests/                    # Unit tests (63 tests)
+├── .gitignore                # Git ignore file
+├── OpenVScodeHere.bat        # Batch file to open VS Code
+├── pyproject.toml            # Project metadata & dependencies
+├── README.md                 # This file
+├── setup_env.ps1             # Windows setup script
+├── setup_env.sh              # Linux/Mac setup script
+└── uv.lock                   # UV lock file
 ```
 
 **Note:** Raw sourcedata files and large dataset files are not tracked in the repository due to size constraints. Download preprocessed `.mat` files separately (see Dataset section below).
