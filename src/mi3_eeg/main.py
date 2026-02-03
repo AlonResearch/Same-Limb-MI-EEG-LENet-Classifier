@@ -42,17 +42,13 @@ def main(
         subject_file: Subject .mat file to use. If None, uses config default.
         subject_id: Subject ID. If None, inferred from subject_file.
     """
-    logger.info("=" * 80)
-    logger.info("MI3 EEG Motor Imagery Classification Pipeline")
-    logger.info("=" * 80)
-    
-    # Initialize paths
+    # Initialize paths and setup logger with file output FIRST
     paths = Paths.from_here()
     paths.create_directories()
-    
-    # Setup logger with file output
     log_file = paths.reports_logs / "training_run.log"
     setup_logger(log_file=log_file)
+    
+    logger.info("MI3 EEG Motor Imagery Classification Pipeline")
     
     # Detect device if not specified
     if device is None:
@@ -64,9 +60,7 @@ def main(
         model_types = ["lenet"]
     
     # === STAGE 1: Data Loading ===
-    logger.info("\n" + "=" * 80)
     logger.info("STAGE 1: Loading and Preprocessing Data")
-    logger.info("=" * 80)
     
     # Override config if subject file is provided
     if subject_file is not None:
@@ -87,15 +81,17 @@ def main(
     else:
         data_config = DataConfig()
     
-    logger.info(f"Dataset: {data_config.mat_filename}")
-    logger.info(f"Subject: {data_config.subject_id}")
-    logger.info(f"Sampling rate: {data_config.sampling_rate} Hz")
-    logger.info(f"Test split: {data_config.test_size * 100}%")
+    logger.info(
+        f"Dataset: {data_config.mat_filename}, Subject: {data_config.subject_id}, "
+        f"Sampling: {data_config.sampling_rate}Hz, Test split: {data_config.test_size * 100}%"
+    )
     
     # Load dataset
     data_bundle = load_dataset_from_config(config=data_config, paths=paths)
-    logger.info(f"Data shape: {data_bundle.data.shape}")
-    logger.info(f"Class distribution: {data_bundle.class_distribution}")
+    logger.info(
+        f"Data shape: {data_bundle.data.shape}, "
+        f"Class distribution: {data_bundle.class_distribution}"
+    )
     
     # Prepare data loaders
     train_loader, test_loader = prepare_data_loaders(
@@ -103,9 +99,7 @@ def main(
     )
     
     # === STAGE 2: Model Training ===
-    logger.info("\n" + "=" * 80)
     logger.info("STAGE 2: Training Models")
-    logger.info("=" * 80)
     
     model_config = ModelConfig(
         channel_count=data_bundle.channel_count,
@@ -187,13 +181,11 @@ def main(
     )
     
     # === COMPLETION ===
-    logger.info("\n" + "=" * 80)
-    logger.info("Pipeline completed successfully!")
-    logger.info("=" * 80)
-    logger.info(f"Models saved to: {paths.models}")
-    logger.info(f"Results saved to: {paths.reports_metrics}")
-    logger.info(f"Figures saved to: {paths.reports_figures}")
-    logger.info(f"Logs saved to: {log_file}")
+    logger.info(
+        f"Pipeline completed successfully! "
+        f"Models: {paths.models}, Results: {paths.reports_metrics}, "
+        f"Figures: {paths.reports_figures}, Logs: {log_file}"
+    )
 
 
 def cli() -> None:

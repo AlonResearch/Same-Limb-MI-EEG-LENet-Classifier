@@ -28,6 +28,7 @@ def setup_logger(
     """
     logger = logging.getLogger(name)
     logger.setLevel(level)
+    logger.propagate = False  # Prevent duplicate logs from root logger
     
     # Format for log messages
     formatter = logging.Formatter(

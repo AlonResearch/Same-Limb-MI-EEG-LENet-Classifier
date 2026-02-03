@@ -25,6 +25,7 @@ def plot_training_curves(
     history: TrainingHistory,
     save_path: Path | None = None,
     show: bool = False,
+    subject_id: str = "Subject",
 ) -> plt.Figure:
     """Plot training and validation curves.
     
@@ -32,6 +33,7 @@ def plot_training_curves(
         history: TrainingHistory object with metrics.
         save_path: Optional path to save the figure.
         show: Whether to display the plot.
+        subject_id: Subject identifier to display in titles.
     
     Returns:
         Matplotlib figure object.
@@ -52,7 +54,7 @@ def plot_training_curves(
     )
     ax1.set_xlabel("Epoch", fontsize=12)
     ax1.set_ylabel("Accuracy", fontsize=12)
-    ax1.set_title("Training and Validation Accuracy", fontsize=14, fontweight="bold")
+    ax1.set_title(f"{subject_id} - Training and Validation Accuracy", fontsize=14, fontweight="bold")
     ax1.legend(loc="lower right")
     ax1.grid(True, alpha=0.3)
     
@@ -68,7 +70,7 @@ def plot_training_curves(
     )
     ax2.set_xlabel("Epoch", fontsize=12)
     ax2.set_ylabel("Loss", fontsize=12)
-    ax2.set_title("Training and Validation Loss", fontsize=14, fontweight="bold")
+    ax2.set_title(f"{subject_id} - Training and Validation Loss", fontsize=14, fontweight="bold")
     ax2.legend(loc="upper right")
     ax2.grid(True, alpha=0.3)
     
@@ -90,6 +92,7 @@ def plot_confusion_matrix(
     save_path: Path | None = None,
     show: bool = False,
     normalize: bool = False,
+    subject_id: str = "Subject",
 ) -> plt.Figure:
     """Plot confusion matrix.
     
@@ -98,6 +101,7 @@ def plot_confusion_matrix(
         save_path: Optional path to save the figure.
         show: Whether to display the plot.
         normalize: Whether to normalize the confusion matrix.
+        subject_id: Subject identifier to display in title.
     
     Returns:
         Matplotlib figure object.
@@ -119,7 +123,7 @@ def plot_confusion_matrix(
     disp.plot(ax=ax, cmap="Blues", values_format=fmt)
     
     ax.set_title(
-        f"Confusion Matrix (Accuracy: {results.overall_accuracy * 100:.2f}%)",
+        f"{subject_id} - Confusion Matrix (Accuracy: {results.overall_accuracy * 100:.2f}%)",
         fontsize=14,
         fontweight="bold",
     )
@@ -137,109 +141,11 @@ def plot_confusion_matrix(
     return fig
 
 
-def plot_confusion_matrix_custom_colors(
-    results: EvaluationResults,
-    save_path: Path | None = None,
-    show: bool = False,
-    good_threshold: float = 0.5,
-    bad_threshold: float = 0.2,
-) -> plt.Figure:
-    """Plot confusion matrix with custom coloring (green=good, red=bad).
-    
-    Similar to the notebook's custom visualization where:
-    - Diagonal elements: green if high, red if low
-    - Off-diagonal elements: red if high, green if low
-    
-    Args:
-        results: EvaluationResults with confusion matrix.
-        save_path: Optional path to save the figure.
-        show: Whether to display the plot.
-        good_threshold: Threshold for diagonal elements to be considered good.
-        bad_threshold: Threshold for off-diagonal elements to be considered bad.
-    
-    Returns:
-        Matplotlib figure object.
-    """
-    cm = results.confusion_matrix
-    
-    # Normalize by row
-    cm_normalized = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
-    
-    # Create custom color matrix
-    num_classes = cm.shape[0]
-    color_matrix = np.zeros((num_classes, num_classes, 3))
-    
-    cmap_greens = plt.cm.get_cmap("Greens")
-    cmap_reds = plt.cm.get_cmap("Reds")
-    
-    for i in range(num_classes):
-        for j in range(num_classes):
-            norm_value = cm_normalized[i, j]
-            
-            if i == j:  # Diagonal (correct predictions)
-                if norm_value > good_threshold:
-                    color_val = norm_value
-                    color_matrix[i, j, :] = cmap_greens(color_val)[:3]
-                else:
-                    color_val = 1.0 - norm_value
-                    color_matrix[i, j, :] = cmap_reds(color_val)[:3]
-            else:  # Off-diagonal (incorrect predictions)
-                if norm_value > bad_threshold:
-                    color_val = norm_value
-                    color_matrix[i, j, :] = cmap_reds(color_val)[:3]
-                else:
-                    color_val = 1.0 - norm_value
-                    color_matrix[i, j, :] = cmap_greens(color_val)[:3]
-    
-    # Plot
-    fig, ax = plt.subplots(figsize=(10, 8))
-    ax.imshow(color_matrix, aspect="auto")
-    
-    # Add text annotations
-    for i in range(num_classes):
-        for j in range(num_classes):
-            text_color = "white" if cm_normalized[i, j] > 0.5 else "black"
-            ax.text(
-                j,
-                i,
-                str(cm[i, j]),
-                ha="center",
-                va="center",
-                color=text_color,
-                fontsize=12,
-                fontweight="bold",
-            )
-    
-    # Formatting
-    ax.set_xticks(range(num_classes))
-    ax.set_yticks(range(num_classes))
-    ax.set_xticklabels(results.class_names)
-    ax.set_yticklabels(results.class_names)
-    ax.set_xlabel("Predicted Label", fontsize=12)
-    ax.set_ylabel("True Label", fontsize=12)
-    ax.set_title(
-        f"Confusion Matrix - Custom Colors (Accuracy: {results.overall_accuracy * 100:.2f}%)",
-        fontsize=14,
-        fontweight="bold",
-    )
-    
-    plt.tight_layout()
-    
-    if save_path is not None:
-        save_path.parent.mkdir(parents=True, exist_ok=True)
-        plt.savefig(save_path, dpi=300, bbox_inches="tight")
-        logger.info(f"Custom confusion matrix saved to: {save_path}")
-    
-    if show:
-        plt.show()
-    
-    return fig
-
-
 def plot_class_accuracies(
     results: dict[str, EvaluationResults],
     save_path: Path | None = None,
     show: bool = False,
+    subject_id: str = "Subject",
 ) -> plt.Figure:
     """Plot comparison of per-class accuracies across models.
     
@@ -247,6 +153,7 @@ def plot_class_accuracies(
         results: Dictionary mapping model names to EvaluationResults.
         save_path: Optional path to save the figure.
         show: Whether to display the plot.
+        subject_id: Subject identifier to display in title.
     
     Returns:
         Matplotlib figure object.
@@ -271,7 +178,7 @@ def plot_class_accuracies(
     
     ax.set_xlabel("Class", fontsize=12)
     ax.set_ylabel("Accuracy (%)", fontsize=12)
-    ax.set_title("Per-Class Accuracy Comparison", fontsize=14, fontweight="bold")
+    ax.set_title(f"{subject_id} - Per-Class Accuracy Comparison", fontsize=14, fontweight="bold")
     ax.set_xticks(x)
     ax.set_xticklabels(class_names)
     ax.legend()
@@ -295,6 +202,7 @@ def plot_overall_comparison(
     results: dict[str, EvaluationResults],
     save_path: Path | None = None,
     show: bool = False,
+    subject_id: str = "Subject",
 ) -> plt.Figure:
     """Plot overall accuracy comparison across models.
     
@@ -302,6 +210,7 @@ def plot_overall_comparison(
         results: Dictionary mapping model names to EvaluationResults.
         save_path: Optional path to save the figure.
         show: Whether to display the plot.
+        subject_id: Subject identifier to display in title.
     
     Returns:
         Matplotlib figure object.
@@ -326,7 +235,7 @@ def plot_overall_comparison(
         )
     
     ax.set_ylabel("Accuracy (%)", fontsize=12)
-    ax.set_title("Overall Model Accuracy Comparison", fontsize=14, fontweight="bold")
+    ax.set_title(f"{subject_id} - Overall Model Accuracy Comparison", fontsize=14, fontweight="bold")
     ax.set_ylim([0, 100])
     ax.grid(axis="y", alpha=0.3)
     
@@ -365,6 +274,7 @@ def create_all_visualizations(
         plot_training_curves(
             history,
             save_path=output_dir / f"{subject_id}_{model_name}_training_curves.png",
+            subject_id=subject_id,
         )
     
     # Confusion matrices for each model
@@ -372,10 +282,7 @@ def create_all_visualizations(
         plot_confusion_matrix(
             results,
             save_path=output_dir / f"{subject_id}_{model_name}_confusion_matrix.png",
-        )
-        plot_confusion_matrix_custom_colors(
-            results,
-            save_path=output_dir / f"{subject_id}_{model_name}_confusion_matrix_custom.png",
+            subject_id=subject_id,
         )
     
     # Comparisons
@@ -383,10 +290,12 @@ def create_all_visualizations(
         plot_class_accuracies(
             evaluation_results,
             save_path=output_dir / "class_accuracies_comparison.png",
+            subject_id=subject_id,
         )
         plot_overall_comparison(
             evaluation_results,
             save_path=output_dir / "overall_accuracy_comparison.png",
+            subject_id=subject_id,
         )
     
     plt.close("all")  # Close all figures to free memory

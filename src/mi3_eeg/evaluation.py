@@ -229,17 +229,17 @@ def print_evaluation_summary(results: dict[str, EvaluationResults]) -> None:
     Args:
         results: Dictionary mapping model names to EvaluationResults.
     """
-    print("\n" + "=" * 80)
-    print("MODEL EVALUATION SUMMARY")
-    print("=" * 80)
+    logger.debug("=" * 80)
+    logger.info("MODEL EVALUATION SUMMARY")
+    logger.debug("=" * 80)
     
     # Header
     class_names = next(iter(results.values())).class_names
     header = f"{'Model':<20} | {'Overall Acc.':<12}"
     for class_name in class_names:
         header += f" | {class_name + ' Acc.':<12}"
-    print(header)
-    print("-" * 80)
+    logger.debug(header)
+    logger.debug("-" * 80)
     
     # Results for each model
     for model_name, result in results.items():
@@ -250,6 +250,6 @@ def print_evaluation_summary(results: dict[str, EvaluationResults]) -> None:
                 row += f" | {'N/A':>12}"
             else:
                 row += f" | {acc * 100:>11.2f}%"
-        print(row)
+        logger.debug(row)
     
-    print("=" * 80 + "\n")
+    logger.debug("=" * 80)

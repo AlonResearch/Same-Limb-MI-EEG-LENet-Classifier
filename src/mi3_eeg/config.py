@@ -116,7 +116,7 @@ class TrainingConfig:
         device: Device to use for training ('cuda' or 'cpu').
     """
 
-    epochs: int = 300
+    epochs: int = 600
     batch_size: int = 64
     learning_rate: float = 0.01
     dropout: float = 0.4
