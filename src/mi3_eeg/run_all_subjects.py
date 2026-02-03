@@ -1,56 +1,35 @@
 """Run training on all subjects in the derivatives folder."""
 
-from pathlib import Path
 import subprocess
 import sys
 
+from mi3_eeg.config import Paths, TrainingConfig
+from mi3_eeg.logger import logger
+from mi3_eeg.metrics_aggregator import generate_metrics_report
+
 def main():
     """Run training on all .mat files in derivatives folder."""
-    derivatives_path = Path(__file__).parent / "Datasets" / "MI3" / "derivatives"
-    metrics_path = Path(__file__).parent / "reports" / "metrics"
+    paths = Paths.from_here()
+    training_config = TrainingConfig()
+    derivatives_path = paths.dataset_derivatives
+    metrics_path = paths.reports_metrics
     
     # Find all *_eeg200hz.mat files (skip the original sub-011_eeg.mat for now)
     mat_files = sorted(derivatives_path.glob("*_eeg200hz.mat"))
     
     if not mat_files:
-        print("No *_eeg200hz.mat files found in derivatives folder!")
+        logger.error("No *_eeg200hz.mat files found in derivatives folder!")
         return
     
-    print(f"Found {len(mat_files)} subject files:")
+    logger.info(f"Found {len(mat_files)} subject files:")
     for f in mat_files:
-        print(f"  - {f.name}")
+        logger.info(f"  - {f.name}")
     
-    # Filter out subjects that already have results
-    completed = []
-    pending = []
-    for mat_file in mat_files:
-        subject_id = mat_file.name.split('_')[0]
-        results_file = metrics_path / f"{subject_id}_lenet_results.json"
-        if results_file.exists():
-            completed.append(mat_file.name)
-        else:
-            pending.append(mat_file)
+    logger.info(f"Starting training runs with {training_config.epochs} epochs each ({len(mat_files)} total)...")
     
-    if completed:
-        print(f"\n✓ Already completed ({len(completed)}):")
-        for f in completed[:5]:
-            print(f"  - {f}")
-        if len(completed) > 5:
-            print(f"  ... and {len(completed) - 5} more")
-    
-    if not pending:
-        print("\n✓ All subjects already processed!")
-        return
-    
-    print(f"\n{'='*80}")
-    print(f"Starting training runs with 50 epochs each ({len(pending)} remaining)...")
-    print(f"{'='*80}\n")
-    
-    # Run training on each pending file
-    for i, mat_file in enumerate(pending, 1):
-        print(f"\n{'='*80}")
-        print(f"[{i}/{len(pending)}] Processing: {mat_file.name}")
-        print(f"{'='*80}\n")
+    # Run training on each file
+    for i, mat_file in enumerate(mat_files, 1):
+        logger.info(f"[{i}/{len(mat_files)}] Processing: {mat_file.name}")
         
         # Run the training
         cmd = [
@@ -60,25 +39,30 @@ def main():
             "--subject-file",
             mat_file.name,
             "--epochs",
-            "50"
+            str(training_config.epochs)
         ]
         
         try:
             result = subprocess.run(cmd, check=True)
-            print(f"\n✓ Successfully completed: {mat_file.name}")
+            logger.info(f"✓ Successfully completed: {mat_file.name}")
         except subprocess.CalledProcessError as e:
-            print(f"\n✗ Failed on: {mat_file.name}")
-            print(f"Error: {e}")
+            logger.error(f"✗ Failed on: {mat_file.name}", exc_info=True)
             # Continue with next file
             continue
     
-    print(f"\n{'='*80}")
-    print(f"All training runs completed!")
-    print(f"{'='*80}")
-    print(f"Results saved in:")
-    print(f"  - models/")
-    print(f"  - reports/metrics/")
-    print(f"  - reports/figures/")
+    logger.info(
+        "All training runs completed! Results saved in: "
+        "models/, reports/metrics/, reports/figures/"
+    )
+    
+    # Generate comprehensive metrics report
+    logger.info("Generating comprehensive metrics report...")
+    
+    try:
+        generate_metrics_report(metrics_path)
+        logger.info("✓ Metrics report generated successfully!")
+    except Exception as e:
+        logger.error(f"✗ Failed to generate metrics report: {e}")
 
 if __name__ == "__main__":
     main()
