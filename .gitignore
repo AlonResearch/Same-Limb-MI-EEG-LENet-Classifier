@@ -4,7 +4,6 @@ MatlabToolkits/
 
 # Dataset files (download from source - see README)
 Datasets/MI3/derivatives/*.mat
-!Datasets/MI3/derivatives/sub-011_eeg90hz.mat
 
 # Python/venv artifacts
 __pycache__/
