@@ -8,6 +8,7 @@ across all subjects.
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -33,6 +34,10 @@ from mi3_eeg.analysis.time_frequency import (
     compute_erd_ers_from_rest,
     process_subject_tfr,
     get_class_specific_power,
+)
+from mi3_eeg.analysis.tfr_visualization import (
+    plot_group_erd_ers_maps,
+    plot_group_topomaps,
 )
 from mi3_eeg.analysis.topography import (
     create_mne_info,
@@ -205,64 +210,45 @@ def _compute_group_time_frequency_and_topography(
         for band, cls_dict in topo_accumulator.items()
     }
 
-    # === Time-Frequency Maps (ERD/ERS) ===
-    tf_output = output_dir / "figures"
-    tf_output.mkdir(parents=True, exist_ok=True)
+    # === Visualize Time-Frequency Maps ===
+    tf_output = output_dir / "tfr_analysis"
+    plot_group_erd_ers_maps(
+        tf_mean=tf_mean,
+        times=times,
+        freqs=freqs,
+        electrodes=electrodes,
+        electrode_indices=electrode_indices,
+        output_path=tf_output,
+    )
 
-    all_vals = np.concatenate([v.flatten() for v in tf_mean.values()])
-    vlim = np.nanpercentile(np.abs(all_vals), 95)
-    vmin, vmax = -vlim, vlim
+    # === Visualize Topographical Maps ===
+    topo_output = output_dir / "tfr_analysis"
+    plot_group_topomaps(
+        topo_mean=topo_mean,
+        channel_names=channel_names,
+        montage_name=montage,
+        output_path=topo_output,
+        sampling_rate=config.sampling_rate,
+    )
 
-    n_rows = len(class_map)
-    n_cols = len(electrode_indices)
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(4 * n_cols, 3.5 * n_rows), sharex=True, sharey=True)
-
-    if n_rows == 1:
-        axes = np.array([axes])
-    if n_cols == 1:
-        axes = axes.reshape(n_rows, 1)
-
-    for r, cls_name in enumerate(["Hand", "Elbow", "Rest"]):
-        cls_data = tf_mean[cls_name]
-        for c, (elec_name, elec_idx) in enumerate(zip(electrodes, electrode_indices)):
-            ax = axes[r, c]
-            im = ax.imshow(
-                cls_data[c],
-                aspect="auto",
-                origin="lower",
-                extent=[times[0], times[-1], freqs[0], freqs[-1]],
-                cmap="RdBu_r",
-                vmin=vmin,
-                vmax=vmax,
-            )
-            ax.set_title(f"{cls_name} - {elec_name}", fontsize=11, fontweight="bold")
-            if r == n_rows - 1:
-                ax.set_xlabel("Time (s)")
-            if c == 0:
-                ax.set_ylabel("Frequency (Hz)")
-
-    cbar = fig.colorbar(im, ax=axes.ravel().tolist(), shrink=0.75)
-    cbar.set_label("ERD/ERS (%)")
-    fig.suptitle("Group-Averaged Time-Frequency ERD/ERS Maps", fontsize=16, fontweight="bold")
-    fig.tight_layout(rect=[0, 0, 1, 0.96])
-    fig.savefig(tf_output / "group_time_frequency_maps.png", dpi=300, bbox_inches="tight")
-    plt.close(fig)
-
-    # === Topographical Maps (Alpha/Beta) ===
-    info = create_mne_info(channel_names, sfreq=config.sampling_rate, montage=montage)
-    topo_output = output_dir / "figures"
-    topo_output.mkdir(parents=True, exist_ok=True)
-
-    for band_name, class_dict in topo_mean.items():
-        fig, _ = plot_topomap_comparison(
-            class_dict,
-            info=info,
-            cmap="RdBu_r",
-            title=f"Group Topography - {band_name.title()} Band",
-            cbar_label="Power (a.u.)",
+    # === Save aggregated data for visualization regeneration ===
+    try:
+        from mi3_eeg.analysis.regenerate_visualizations import save_aggregated_data
+        cache_dir = Path.home() / ".cache" / "mi3_eeg" / "tfr"
+        save_aggregated_data(
+            tf_mean=tf_mean,
+            topo_mean=topo_mean,
+            times=times,
+            freqs=freqs,
+            electrodes=electrodes,
+            electrode_indices=electrode_indices,
+            channel_names=channel_names,
+            montage=montage,
+            cache_dir=cache_dir,
         )
-        save_topomap(fig, topo_output / f"group_topomap_{band_name}.png")
-        plt.close(fig)
+        logger.info("✓ Saved aggregated TFR data for visualization regeneration")
+    except Exception as e:
+        logger.warning(f"Could not save aggregated TFR data: {e}")
 
 
 def load_classification_metrics(
@@ -587,12 +573,21 @@ def run_group_analysis(
 def main():
     """Main entry point for group analysis script."""
     import argparse
+    from mi3_eeg.logger import setup_logger
     
     parser = argparse.ArgumentParser(description='Run group-level EEG analysis')
     parser.add_argument('--model', type=str, default='lenet', help='Model name')
     parser.add_argument('--subjects', type=str, nargs='+', help='Subset of subjects to analyze')
     
     args = parser.parse_args()
+    
+    # Setup file logging to reports/logs
+    paths = Paths.from_here()
+    log_dir = paths.reports_logs
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / f"group_analysis_{args.model}.log"
+    
+    setup_logger(name="mi3_eeg", level=logging.INFO, log_file=log_file)
     
     run_group_analysis(
         model_name=args.model,
