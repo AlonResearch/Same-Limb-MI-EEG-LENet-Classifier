@@ -1,0 +1,5 @@
+# Prevent LFS from tracking derivative files - use local copies instead
+Datasets/MI3/derivatives/** -filter -diff -merge -text
+
+# Standard LFS patterns for other files (if any)
+*.pth filter=lfs diff=lfs merge=lfs -text
