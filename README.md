@@ -1,63 +1,285 @@
 # Same Limb MI-EEG LENet Classifier
 
-A modular, production-ready PyTorch package for classifying motor imagery EEG signals from the MI3 dataset using deep learning.
+A modular, production-ready PyTorch package for classifying motor imagery EEG signals from the MI3 dataset using deep learning, with comprehensive group-level analysis capabilities.
 
 ## 🎯 Overview
 
-Motor-imagery EEG trials from the MI3 dataset are classified with the LENet architecture:
+Motor-imagery EEG trials from the MI3 dataset are classified with the LENet architecture and analyzed at both individual and group levels:
 
-- **LENet** – A CNN that is lightweight and efficient by using Convolutional Classification Block with multi-scale temporal, spatial, and feature fusion layers
+- **LENet (CCB)** – A CNN architecture with Convolutional Classification Block featuring multi-scale temporal, spatial, and feature fusion layers
+- **Group-Level Analysis** – Comprehensive statistical analysis, time-frequency decomposition (TFR), and topographical brain mapping across all subjects
 
 **Key Features:**
 - ✅ Modular, testable architecture following best practices
 - ✅ BIDS-compliant dataset structure
-- ✅ Comprehensive logging and monitoring
+- ✅ Subject-specific and full-cohort training modes
+- ✅ Comprehensive group-level EEG analysis pipeline
+- ✅ Time-frequency analysis with ERD/ERS mapping
+- ✅ Topographical brain mapping with MNE
+- ✅ Statistical testing (ANOVA, pairwise t-tests, FDR correction)
+- ✅ Modular visualization system with caching
 - ✅ Automated training with early stopping
-- ✅ Rich visualization suite
 - ✅ GPU/CUDA acceleration support
-- ✅ 63 unit tests ensuring reliability (including CUDA tests)
+- ✅ 63+ unit tests ensuring reliability
 
 ## 📁 Project Structure
 
+### Root Level (Configuration & Data)
 ```
 Same-Limb-MI-EEG-LENet-Classifier/
-├── Datasets/                 # BIDS-formatted MI3 dataset
-│   └── MI3/
-│       └── derivatives/      # Preprocessed .mat files (not in repo)
-├── models/                   # Saved model weights (subject-specific)
-│   ├── sub-001_lenet_best.pth
+├── Datasets/                          # 📊 BIDS-formatted input data
+│   └── MI3/derivatives/               # Preprocessed .mat files (download separately)
+│       ├── sub-001_eeg200hz.mat
+│       └── ...                        # sub-001 through sub-025
+│
+├── models/                            # 🧠 Trained neural network weights
+│   ├── sub-001_lenet_best.pth         # Per-subject models (25 total)
 │   ├── sub-001_lenet_final.pth
-│   └── ...                   # Models for all 24 subjects
-├── Notebooks/                # Exploratory notebooks
-├── reports/                  # Training outputs
-│   ├── figures/              # Plots and visualizations
-│   │   ├── sub-XXX_lenet_confusion_matrix.png
-│   │   ├── sub-XXX_lenet_training_curves.png
-│   │   └── ...
-│   ├── logs/                 # Training logs
-│   └── metrics/              # Evaluation results (JSON)
-│       ├── sub-XXX_lenet_results.json
-│       └── ...               # Results for all 24 subjects
-├── src/                      # Source code
-│   └── mi3_eeg/              # Main package
-│       ├── config.py         # Configuration and paths
-│       ├── dataset.py        # Data loading and preprocessing
-│       ├── evaluation.py     # Metrics and evaluation
-│       ├── logger.py         # Centralized logging
-│       ├── main.py           # Pipeline orchestrator
-│       ├── model.py          # Neural network architectures
-│       ├── run_all_subjects.py  # Batch processing script for all subjects
-│       ├── train.py          # Training orchestration
-│       └── visualization.py  # Plotting and visualization
-├── tests/                    # Unit tests (63 tests)
-├── OpenVScodeHere.bat        # Batch file to open VS Code
-├── pyproject.toml            # Project metadata & dependencies
-├── README.md                 # This file
-├── setup_env.ps1             # Windows setup script
-└── setup_env.sh              # Linux/Mac setup script
+│   └── ...
+│
+└── reports/                           # 📈 Analysis outputs
+    ├── figures/                       # Training visualizations
+    ├── logs/                          # Training logs (.txt)
+    ├── metrics/                       # Performance metrics (.json, .csv)
+    └── group_analysis/                # Post-training group analysis
+        ├── figures/                   # Performance summary plots
+        ├── tfr_analysis/              # Time-frequency & topography
+        └── statistics/                # Statistical test results
 ```
 
-**Note:** Raw sourcedata files and large dataset files are not tracked in the repository due to size constraints. Download preprocessed `.mat` files separately (see Dataset section below).
+### Source Code (`src/mi3_eeg/`)
+
+**Core Training Pipeline:**
+```
+├── main.py                            # 🔧 Single-subject training orchestrator
+├── run_all_subjects.py                # 🔁 Batch training for all subjects
+├── train.py                           # Training loops + early stopping
+├── model.py                           # LENet architecture
+├── dataset.py                         # Data loading & preprocessing
+├── evaluation.py                      # Metrics computation
+├── visualization.py                   # Training plots (curves, confusion matrices)
+├── config.py                          # Configuration dataclasses
+├── logger.py                          # Centralized logging
+└── __init__.py                        # Package exports
+```
+
+**Analysis Submodule (`analysis/`):**
+```
+└── analysis/                          # 📊 Group-level analysis (independent pipeline)
+    ├── group_analysis.py              # Main orchestrator (4-step workflow)
+    ├── time_frequency.py              # TFR computation + ERD/ERS
+    ├── topography.py                  # Topographical brain mapping
+    ├── statistical_tests.py           # ANOVA, t-tests, FDR correction
+    ├── tfr_visualization.py           # Modular TFR plotting
+    ├── regenerate_visualizations.py   # Cache-based viz regeneration
+    ├── metrics_aggregator.py          # Cross-subject metrics aggregation
+    ├── visualization.py               # Analysis-specific plots
+    └── __init__.py                    # Analysis exports
+```
+
+### Testing & Configuration (Root)
+```
+├── tests/                             # 🧪 Unit tests (63+ tests)
+│   ├── test_*.py                      # Test modules
+│   └── conftest.py                    # Pytest configuration
+│
+├── pyproject.toml                     # ⚙️ Project metadata & dependencies
+├── setup_env.ps1                      # Windows setup automation
+├── setup_env.sh                       # Linux/Mac setup automation
+├── uv.lock                            # Locked dependency versions
+├── README.md                          # This file
+└── .gitignore / .gitattributes       # Git configuration
+```
+
+### Key Points
+- **Data**: Download preprocessed `.mat` files to `Datasets/MI3/derivatives/`
+- **Training outputs**: Saved to `models/` and `reports/{figures,metrics,logs}/`
+- **Analysis outputs**: Grouped in `reports/group_analysis/` (separate from training)
+- **All source code**: In `src/mi3_eeg/` (including `analysis/` submodule)
+
+## 🔄 Complete Pipeline Workflow
+
+The project has **4 independent pipelines** with flexible execution options:
+
+### Pipeline A: Subject-Level Training
+
+Train individual neural network models (no external dependencies needed):
+
+```bash
+python -m mi3_eeg.run_all_subjects
+```
+
+**Timing:** 30-60 minutes
+
+**Process:**
+1. Loads each subject's EEG data from `Datasets/MI3/derivatives/`
+2. Trains a LENet model on that subject's data
+3. Evaluates on held-out test set
+4. Saves model weights and per-subject metrics
+
+**Outputs:**
+- `models/sub-XXX_lenet_best.pth` - Best model per subject (25 models)
+- `models/sub-XXX_lenet_final.pth` - Final model per subject
+- `reports/metrics/sub-XXX_lenet_results.json` - Per-subject performance
+- `reports/figures/sub-XXX_lenet_*.png` - Confusion matrices, training curves
+
+**Results by Subject:**
+- Accuracy ranges from 37-75% across subjects
+- Mean accuracy: 51.47% ± 8.19%
+
+---
+
+### Pipeline B: Classification Analysis (Depends on Pipeline A)
+
+Aggregate training results and perform statistical analysis on classification performance:
+
+```bash
+python -m mi3_eeg.analysis.group_analysis --analysis-type classification
+```
+
+**Timing:** 2-5 minutes
+
+**Dependencies:** ⚠️ **Requires Pipeline A** - must run after training completes
+
+**3-Step Analysis:**
+
+1. **Metrics Aggregation**
+   - Loads all per-subject results from `reports/metrics/`
+   - Aggregates accuracy, precision, recall, F1-score
+   - Creates summary: `lenet_all_subjects_metrics.csv`
+
+2. **Performance Visualization**
+   - Accuracy distribution histogram (all 25 subjects)
+   - Subject ranking bar chart
+   - Per-class accuracy boxplots
+   - Saves to `reports/group_analysis/figures/`
+
+3. **Statistical Testing**
+   - One-way ANOVA across classes (Rest/Elbow/Hand)
+   - Pairwise t-tests with FDR correction (Benjamini-Hochberg)
+   - Effect size calculations (Cohen's d, η²)
+   - Saves to `reports/group_analysis/statistics/`
+
+**Outputs:**
+```
+reports/group_analysis/figures/
+├── lenet_accuracy_distribution.png
+├── lenet_subject_ranking.png
+└── lenet_class_accuracy_boxplot.png
+
+reports/group_analysis/statistics/
+├── lenet_classification_statistics.json
+└── lenet_classification_statistics.txt
+```
+
+**Key Findings:**
+- **One-way ANOVA:** F(2,72) = 5.83, **p = 0.0045** ✓✓✓
+- **Effect Size:** η² = 0.139 (moderate)
+- Rest significantly easier to classify than motor imagery (p=0.0005)
+
+---
+
+### Pipeline C: Time-Frequency & Topographical Analysis ⭐ **INDEPENDENT**
+
+Analyze raw EEG data with no dependency on trained models:
+
+```bash
+python -m mi3_eeg.analysis.group_analysis --analysis-type tfr
+```
+
+**Timing:** 15-30 minutes
+
+**Dependencies:** ✅ NONE - only needs raw `.mat` files
+
+**🚀 Can run in parallel with Pipeline A!** Since they use different data sources, you can save 20+ minutes by running them simultaneously.
+
+**Analysis:**
+
+1. **Time-Frequency Decomposition**
+   - Loads raw EEG from `Datasets/MI3/derivatives/`
+   - Morlet wavelet decomposition (4-40 Hz)
+   - Event-related desynchronization/synchronization (ERD/ERS)
+   - Batch processing: Memory-efficient (~2-3 GB per batch)
+
+2. **Topographical Mapping**
+   - Brain maps for Alpha (8-13 Hz) and Beta (13-30 Hz) bands
+   - Standard 10-20 electrode montage
+   - MNE-based visualization
+
+3. **Caching**
+   - Joblib-based caching at `~/.cache/mi3_eeg/tfr/`
+   - Saves `aggregated_tfr_data.pkl` for fast regeneration
+
+**Outputs:**
+```
+reports/group_analysis/tfr_analysis/
+├── group_time_frequency_maps.png (4.27 MB)
+├── group_topomap_alpha.png (1.79 MB)
+└── group_topomap_beta.png (1.72 MB)
+```
+
+**Key Findings:**
+- Clear mu rhythm desynchronization (8-13 Hz) during motor imagery
+- Beta band (13-30 Hz) modulation over motor cortex
+- Topographical localization consistent with contralateral motor areas
+
+---
+
+### Pipeline D: Visualization Regeneration (Optional)
+
+Regenerate TFR visualizations from cached data without recomputation:
+
+```bash
+python -m mi3_eeg.analysis.regenerate_visualizations
+```
+
+**Timing:** 10-30 seconds
+
+**Dependencies:** Requires Pipeline C to have run at least once (for cache)
+
+**Use Cases:**
+- Tweak plot styling (DPI, colors, layout)
+- Export to different formats
+- Generate custom visualizations
+- Fast iteration (~seconds instead of minutes)
+
+---
+
+## 🔀 Pipeline Combinations
+
+**Option 1: Training Only**
+```
+Pipeline A → Done (30-60 min)
+Get 25 trained models + per-subject results
+```
+
+**Option 2: Training + Classification Analysis**
+```
+Pipeline A → Pipeline B → Done (32-65 min)
+Get trained models + cross-subject classification statistics
+```
+
+**Option 3: EEG Analysis Only (No Training)**
+```
+Pipeline C → Done (15-30 min)
+Get TFR/topography without training models (quick analysis!)
+```
+
+**Option 4: All Analysis (Recommended for papers) - Parallel Execution**
+```
+Terminal 1: python -m mi3_eeg.run_all_subjects          # Pipeline A (30-60 min)
+Terminal 2: python -m mi3_eeg.analysis.group_analysis --analysis-type tfr  # Pipeline C (15-30 min, runs in parallel!)
+Terminal 3: (after A) python -m mi3_eeg.analysis.group_analysis --analysis-type classification  # Pipeline B (2-5 min)
+
+Total Time: ~50 minutes (instead of 73 minutes sequential!)
+Time Saved: ~23 minutes by running A & C in parallel
+```
+
+**Option 5: Tweak Visualizations**
+```
+Pipeline C → Pipeline D → Done (seconds)
+Quickly regenerate TFR plots after adjusting parameters
+```
 
 ## 💻 Environment & Requirements
 
@@ -65,17 +287,29 @@ Same-Limb-MI-EEG-LENet-Classifier/
 - **Python:** 3.11 or 3.12
 - **GPU:** NVIDIA GPU with CUDA 12.4+ (recommended)
   - GTX 1060 or better for training
-  - 4GB+ VRAM recommended
-- **RAM:** 8GB+ system memory
-- **Storage:** 2GB for dependencies + dataset
+  - 4GB+ VRAM for single-subject training
+  - 8GB+ VRAM for full-cohort training
+- **RAM:** 
+  - 8GB+ for subject-specific training
+  - 16GB+ for full-cohort training
+  - 32GB+ recommended for group TFR analysis (25 subjects)
+- **Storage:** 
+  - 2GB for dependencies
+  - 7-10GB for dataset (25+ subjects @ 200Hz)
+  - 1-2GB for models and results
 
 ### Core Dependencies
-- **PyTorch:** 2.5.1+ with CUDA 12.4 support (configured via `pyproject.toml`)
+- **PyTorch:** 2.5.1+ with CUDA 12.4 (auto-configured via `pyproject.toml`)
 - **NumPy:** 1.24+ for numerical operations
+- **SciPy:** 1.11+ for signal processing & .mat file loading
 - **scikit-learn:** 1.3+ for metrics and data splitting
-- **matplotlib:** 3.7+ for visualizations
-- **scipy:** 1.11+ for .mat file loading
-- **pandas:** 2.0+ for data handling
+- **MNE:** 1.11+ for EEG topography and TFR
+- **matplotlib:** 3.7+ / **seaborn:** 0.13+ for visualizations
+- **pandas:** 2.0+ for data aggregation
+- **joblib:** 1.3+ for TFR caching
+- **tqdm:** 4.67+ for progress bars
+- **h5py:** 3.9+ for HDF5 .mat files
+- **pywavelets:** 1.5+ for wavelet transforms
 
 PyTorch with CUDA 12.4 is automatically installed through the custom PyTorch index configured in `pyproject.toml`.
 
@@ -389,115 +623,98 @@ Process all subjects at once:
 python -m mi3_eeg.run_all_subjects
 ```
 
-### Troubleshooting Installation
+## 🔍 Troubleshooting
 
-<details>
-<summary><b>❌ Issue: ModuleNotFoundError: No module named 'mi3_eeg'</b></summary>
+### Common Issues
 
-This means the virtual environment is not activated. Solution:
+**1. ModuleNotFoundError: No module named 'mi3_eeg'**
 ```bash
-# Windows
-.\.venv\Scripts\Activate.ps1
-
-# Linux/Mac
-source .venv/bin/activate
+# Solution: Activate virtual environment
+.\.venv\Scripts\Activate.ps1  # Windows
+source .venv/bin/activate  # Linux/Mac
 
 # Verify it's activated (you should see (.venv) in your prompt)
 python -c "import mi3_eeg; print('✅ Package found!')"
 ```
 
-**VS Code Users:** If using the integrated terminal:
-1. Open Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
-2. Select "Python: Select Interpreter"
-3. Choose the `.venv` interpreter
-4. Open a new terminal (it will auto-activate the venv)
-
-</details>
-
-<details>
-<summary><b>❌ Issue: Corrupted virtual environment</b></summary>
-
-Remove and recreate the virtual environment:
+**2. CUDA not detected**
 ```bash
-# Windows PowerShell
-Remove-Item -Recurse -Force .venv
-
-# Linux/Mac
-rm -rf .venv
-
-# Then follow installation steps again
-uv venv
-.venv\Scripts\activate  # Windows
-# or
-source .venv/bin/activate  # Linux/Mac
-```
-
-</details>
-
-<details>
-<summary><b>❌ Issue: PyTorch CPU version installed instead of CUDA</b></summary>
-
-The project is configured to automatically install PyTorch with CUDA 12.4 support through the PyTorch index specified in `pyproject.toml`. If you're seeing the CPU version:
-
-```bash
-# Check current PyTorch version
-python -c "import torch; print(torch.__version__)"
-
-# Should show something like: 2.6.0+cu124
-
-# If it shows +cpu instead, reinstall:
-# 1. Remove venv
-rm -rf .venv  # Linux/Mac
-Remove-Item -Recurse -Force .venv  # Windows
-
-# 2. Run setup script again
-./setup_env.sh  # Linux/Mac
-.\setup_env.ps1  # Windows
-```
-
-The `pyproject.toml` contains:
-```toml
-[[tool.uv.index]]
-name = "pytorch-cu124"
-url = "https://download.pytorch.org/whl/cu124"
-explicit = true
-```
-
-This ensures PyTorch with CUDA 12.4 is always installed automatically.
-
-</details>
-
-<details>
-<summary><b>❌ Issue: CUDA not detected despite installation</b></summary>
-
-Verify CUDA installation and configuration:
-```bash
-# 1. Verify CUDA is installed on system
+# Check NVIDIA driver
 nvidia-smi
 
-# 2. Check PyTorch version and CUDA support
-python -c "import torch; print(f'PyTorch: {torch.__version__}'); print(f'CUDA Available: {torch.cuda.is_available()}'); print(f'CUDA Version: {torch.version.cuda if torch.cuda.is_available() else "N/A"}')"
+# Verify PyTorch CUDA build
+python -c "import torch; print(torch.__version__)"  # Should show +cu124
 
-# Expected output:
-# PyTorch: 2.6.0+cu124
-# CUDA Available: True
-# CUDA Version: 12.4
+# Verify CUDA availability
+python -c "import torch; print(f'CUDA Available: {torch.cuda.is_available()}')"
 
-# If CUDA not detected:
-# 1. Check NVIDIA drivers are up-to-date (requires 525+ for CUDA 12.4)
-nvidia-smi  # Check driver version at top
-
-# 2. Verify PyTorch CUDA build is installed (should show +cu124)
-python -c "import torch; print(torch.__version__)"
-
-# 3. If showing CPU build (+cpu), reinstall environment
+# Reinstall if needed (remove venv and run setup again)
 rm -rf .venv && ./setup_env.sh  # Linux/Mac
 Remove-Item -Recurse -Force .venv; .\setup_env.ps1  # Windows
 ```
 
-**Note:** The project automatically configures PyTorch with CUDA 12.4 through `pyproject.toml`. The setup scripts handle this automatically.
+**3. Out of memory during TFR analysis**
+```bash
+# TFR analysis (Pipeline C) is memory-intensive but independent
+# Can run in parallel with training (Pipeline A)
 
-</details>
+# Solution 1: Run TFR while training (different terminals)
+# Terminal 1: python -m mi3_eeg.run_all_subjects
+# Terminal 2: python -m mi3_eeg.analysis.group_analysis --analysis-type tfr
+
+# Solution 2: Analyze fewer subjects at a time
+python -m mi3_eeg.analysis.group_analysis --analysis-type tfr --subjects sub-001 sub-002 sub-003
+
+# Solution 3: Close other applications to free up RAM
+
+# Solution 4: Increase system virtual memory (Windows: pagefile.sys)
+
+# Note: First run computes TFR and caches results. Subsequent runs are fast.
+```
+
+**4. Slow TFR computation**
+```bash
+# This is normal for first run (15-30 minutes for 25 subjects)
+# TFR analysis can run in parallel with training to save overall time
+
+# Subsequent runs use joblib cache at ~/.cache/mi3_eeg/tfr/
+# Cache location: 
+#   Windows: C:\Users\<username>\.cache\mi3_eeg\tfr\
+#   Linux/Mac: ~/.cache/mi3_eeg/tfr/
+
+# To clear cache and force recomputation:
+rm -rf ~/.cache/mi3_eeg/tfr/  # Linux/Mac
+Remove-Item -Recurse -Force $env:USERPROFILE\.cache\mi3_eeg\tfr\  # Windows
+```
+
+**5. Missing analysis outputs**
+```bash
+# Check which pipelines have completed
+
+# Training outputs (Pipeline A):
+ls models/                          # Should have sub-001_lenet_*.pth files
+ls reports/metrics/                 # Should have sub-001_lenet_results.json files
+
+# Classification analysis (Pipeline B):
+ls reports/group_analysis/figures/              # Performance plots
+ls reports/group_analysis/statistics/           # Statistical results
+
+# TFR analysis (Pipeline C):
+ls reports/group_analysis/tfr_analysis/        # TFR & topomaps
+
+# If missing, run the corresponding pipeline:
+python -m mi3_eeg.analysis.group_analysis --analysis-type tfr          # Pipeline C
+python -m mi3_eeg.analysis.group_analysis --analysis-type classification # Pipeline B
+```
+
+**6. Import errors for analysis modules**
+```bash
+# Verify analysis submodule is installed
+python -c "from mi3_eeg.analysis import run_group_analysis; print('✅ Analysis module found!')"
+
+# If error, reinstall package in development mode
+pip install -e .
+```
 
 ### Using in Python
 
@@ -509,18 +726,28 @@ from mi3_eeg import (
     train_model,
     evaluate_model,
 )
+from mi3_eeg.analysis import (
+    run_group_analysis,
+    plot_group_erd_ers_maps,
+    plot_group_topomaps,
+    regenerate_from_cache,
+)
 
-# Load data
+# Train single subject
 data_bundle = load_dataset_from_config()
 train_loader, test_loader = prepare_data_loaders(data_bundle)
-
-# Create and train model
 model = create_model("lenet", device="cuda")
 history = train_model(model, train_loader, test_loader)
 
 # Evaluate
 results = evaluate_model(model, test_loader)
 print(f"Accuracy: {results.overall_accuracy * 100:.2f}%")
+
+# Run group analysis (after training all subjects)
+run_group_analysis(model_name="lenet")
+
+# Or regenerate visualizations from cache
+regenerate_from_cache()
 ```
 
 ## 📊 Dataset
@@ -539,10 +766,10 @@ print(f"Accuracy: {results.overall_accuracy * 100:.2f}%")
 2. **Download preprocessed derivatives:**
    - Navigate to the dataset's `derivatives/` folder
    - Download the preprocessed `.mat` files (200Hz sampling rate):
-     - `sub-001_eeg200hz.mat` through `sub-024_eeg200hz.mat` (24 subjects total)
-   - Optional: Download `sub-011_eeg.mat` and `sub-011_eeg90hz.mat` for testing
+     - `sub-001_eeg200hz.mat` through `sub-025_eeg200hz.mat` (25 subjects total)
+   - Optional: Download additional files for testing
    
-   **Note:** As of January 2026, all 24 subjects (sub-001 through sub-024) have been processed with results available in `reports/metrics/`.
+   **Note:** As of February 2026, all 25 subjects (sub-001 through sub-025) have been processed with results available in `reports/metrics/`.
 
 3. **Place files in your local repository:**
    ```bash
@@ -559,12 +786,8 @@ print(f"Accuracy: {results.overall_accuracy * 100:.2f}%")
    ├── sub-001_eeg200hz.mat
    ├── sub-002_eeg200hz.mat
    ├── ...
-   ├── sub-024_eeg200hz.mat
-   ├── sub-011_eeg.mat (optional)
-   └── sub-011_eeg90hz.mat (optional)
+   └── sub-025_eeg200hz.mat
    ```
-
-**Note:** A small example file (`sub-011_eeg90hz.mat`) may be included in the repository for testing purposes. This file contains 90Hz downsampled, bandpass filtered (7-35Hz) data with shape (965 samples, 62 channels, 360 timepoints) and classes: Rest (0), Elbow (1), Hand (2).
 
 ### MI3 Dataset Structure (BIDS Format)
 
@@ -623,20 +846,51 @@ mypy src/
 
 ### Completed Subjects
 
-**✅ All 24 subjects processed** (sub-001 through sub-024)
+**✅ All 25 subjects processed** (sub-001 through sub-025)
 
 Results are available in:
 - `reports/metrics/sub-XXX_lenet_results.json` - Detailed metrics for each subject
 - `reports/figures/sub-XXX_lenet_*.png` - Visualizations (confusion matrices, training curves)
 - `models/sub-XXX_lenet_*.pth` - Trained model weights
 
-### Typical Performance
+### Training Results (25 Subjects)
 
-Performance on MI3 dataset varies by subject:
+#### Subject-Specific Training Performance
+- **Mean Overall Accuracy:** 51.47% ± 8.19%
+- **Range:** 37.22% - 75.00%
+- **Median:** 51.11%
+- **Per-Class Performance:**
+  - Rest: 58.33% ± 16.95% (best)
+  - Hand: 50.42% ± 12.60%
+  - Elbow: 45.92% ± 15.41%
 
-| Model      | Overall Acc | Rest Acc | Elbow Acc | Hand Acc |
-|------------|-------------|----------|-----------|----------|
-| LENet (CCB)| ~75-80%     | ~98%     | ~50-60%   | ~65-75%  |
+#### Statistical Significance
+- **One-Way ANOVA:** F(2,72) = 5.83, **p = 0.0045** ✓✓✓
+  - Significant difference between classes
+  - Effect size: η² = 0.139
+- **Pairwise Comparisons (FDR-corrected):**
+  - Rest vs Elbow: **p = 0.0005**, d = 0.81 (strong effect) ✓✓✓
+  - Rest vs Hand: **p = 0.029**, d = 0.47 (moderate effect) ✓
+  - Elbow vs Hand: p = 0.27 (not significant)
+
+**Interpretation:** Rest condition significantly easier to classify than active motor imagery (Elbow/Hand). Hand imagery shows better performance than Elbow, but difference is not statistically significant.
+
+### Time-Frequency Analysis
+
+- **Frequency Range:** 4-40 Hz (37 frequencies)
+- **Time Window:** 0-4 seconds (800 timepoints @ 200Hz)
+- **ERD/ERS Baseline:** Rest condition
+- **Key Findings:**
+  - Clear mu rhythm desynchronization (8-13 Hz) during motor imagery
+  - Beta band (13-30 Hz) modulation over motor cortex
+  - Topographical localization consistent with contralateral motor areas
+
+### Model Performance
+
+| Model              | Accuracy | Rest   | Elbow  | Hand   | Notes              |
+|--------------------|----------|--------|--------|--------|---------------------|
+| LENet (per-subject)| 51.47%   | 58.33% | 45.92% | 50.42% | 25 subjects        |
+| Chance Level       | 33.33%   | 33.33% | 33.33% | 33.33% | Random baseline    |
 
 **Training Configuration:**
 - Epochs: 50 per subject
@@ -652,58 +906,143 @@ Performance on MI3 dataset varies by subject:
 Key configurations in `src/mi3_eeg/config.py`:
 
 ### DataConfig
-- `mat_filename`: Dataset file name
-- `sampling_rate`: 90 Hz
-- `bandpass_filter`: (7, 35) Hz
+- `mat_filename`: Dataset file pattern
+- `sampling_rate`: 200 Hz
 - `num_channels`: 62
 - `test_size`: 0.2 (20% test split)
+- `class_balance_method`: "downsample"
 
 ### TrainingConfig
-- `epochs`: 1000 (with early stopping)
+- `epochs`: 50 (default for per-subject)
 - `batch_size`: 64
 - `learning_rate`: 0.01
 - `dropout`: 0.35
 - `early_stopping_patience`: 50
 
-### ModelConfig
-- `classes_num`: 3 (Rest, Elbow, Hand)
-- `channel_count`: 62
-- `drop_out`: 0.35
+### GroupAnalysisConfig
+- `tfr_freqs`: (4.0, 40.0, 1.0) Hz
+- `sampling_rate`: 160.0 Hz (resampled for TFR)
+- `use_cache`: True (joblib caching)
+- `baseline_method`: "percent" (ERD/ERS)
+- `electrodes_of_interest`: ["C3", "Cz", "C4"] (motor cortex)
 
 ## 📚 Module Documentation
 
-### `config.py`
-Configuration dataclasses for paths, data, training, and model parameters.
+### Core Modules
 
-### `dataset.py`
-- Load EEG data from BIDS derivatives
-- Class balancing and preprocessing
-- PyTorch DataLoader creation
+- **`config.py`**: Configuration dataclasses, paths, hyperparameters
+- **`dataset.py`**: BIDS data loading, class balancing, DataLoaders
+- **`model.py`**: LENet architecture, model factory, serialization
+- **`train.py`**: Training loops, early stopping, history tracking
+- **`evaluation.py`**: Metrics computation, confusion matrices
+- **`visualization.py`**: Training curves, confusion matrix plots
+- **`main.py`**: Single-subject training pipeline orchestrator
+- **`run_all_subjects.py`**: Batch processing for all subjects
 
-### `model.py`
-- LENet architecture with CCB (Convolutional Classification Block)
-- Model factory functions
-- Weight initialization and serialization
+### Analysis Submodule (`mi3_eeg.analysis`)
 
-### `train.py`
-- Training orchestration with early stopping
-- Epoch-level train/validation loops
-- Training history tracking
+- **`group_analysis.py`**: Main orchestrator for 4-step analysis pipeline
+- **`time_frequency.py`**: Morlet wavelet TFR, ERD/ERS computation, batch processing
+- **`topography.py`**: MNE-based brain mapping, 10-20 montage, electrode positioning
+- **`statistical_tests.py`**: ANOVA, t-tests, FDR correction, effect sizes
+- **`tfr_visualization.py`**: Modular TFR and topomap plotting functions
+- **`regenerate_visualizations.py`**: Standalone visualization regeneration from cache
+- **`metrics_aggregator.py`**: Cross-subject metrics aggregation
+- **`visualization.py`**: Analysis-specific plots
 
-### `evaluation.py`
-- Model evaluation and metrics
-- Confusion matrix computation
-- Per-class accuracy analysis
+## � Quick Start Examples
 
-### `visualization.py`
-- Training curve plots
-- Confusion matrix visualizations
-- Model comparison charts
+### Example 1: Train Single Subject
+```bash
+# Activate environment
+.\.venv\Scripts\Activate.ps1  # Windows
+source .venv/bin/activate  # Linux/Mac
 
-### `main.py`
-- End-to-end pipeline orchestrator
-- CLI interface
-- Logging and artifact management
+# Train subject 001 (Pipeline A)
+python -m mi3_eeg.main --subject-file sub-001_eeg200hz.mat --epochs 50 --device cuda
+```
+
+### Example 2: Train All Subjects (Pipeline A)
+```bash
+# Process all 25 subjects with individual models
+python -m mi3_eeg.run_all_subjects
+```
+
+### Example 3: Analyze Raw EEG (Pipeline C - Independent!)
+```bash
+# Analyze raw EEG with TFR/topography - no training needed
+# Can run in parallel with Example 2
+python -m mi3_eeg.analysis.group_analysis --analysis-type tfr
+```
+
+### Example 4: Classification Analysis (Pipeline B - After Training)
+```bash
+# After training completes, analyze classification results
+python -m mi3_eeg.analysis.group_analysis --analysis-type classification
+
+# Or run all analyses together
+python -m mi3_eeg.analysis.group_analysis
+```
+
+### Example 5: Regenerate TFR Visualizations (Pipeline D)
+```bash
+# Fast regeneration from cached data (no recomputation)
+python -m mi3_eeg.analysis.regenerate_visualizations
+```
+
+### Example 6: Parallel Execution (Recommended Workflow)
+```bash
+# Terminal 1: Start training (Pipeline A - takes 30-60 min)
+python -m mi3_eeg.run_all_subjects
+
+# Terminal 2: Meanwhile, analyze raw EEG (Pipeline C - 15-30 min)
+# No need to wait for training to finish!
+python -m mi3_eeg.analysis.group_analysis --analysis-type tfr
+
+# After both complete: Classification stats (Pipeline B - 2-5 min)
+python -m mi3_eeg.analysis.group_analysis --analysis-type classification
+```
+
+### Example 7: Python API (Training - Pipeline A)
+```python
+from mi3_eeg import (
+    load_dataset_from_config,
+    prepare_data_loaders,
+    create_model,
+    train_model,
+    evaluate_model,
+)
+
+# Load subject data
+data_bundle = load_dataset_from_config()
+train_loader, test_loader = prepare_data_loaders(data_bundle)
+
+# Train and evaluate
+model = create_model("lenet", device="cuda")
+history = train_model(model, train_loader, test_loader)
+results = evaluate_model(model, test_loader)
+print(f"Subject Accuracy: {results.overall_accuracy * 100:.2f}%")
+```
+
+### Example 8: Python API (EEG Analysis - Pipeline C)
+```python
+from mi3_eeg.analysis import group_analysis
+
+# Analyze raw EEG - no training required!
+group_analysis.run_group_analysis(
+    analysis_type="tfr"
+)
+```
+
+### Example 9: Python API (Classification - Pipeline B)
+```python
+from mi3_eeg.analysis import group_analysis
+
+# Analyze classification results (after training)
+group_analysis.run_group_analysis(
+    analysis_type="classification"
+)
+```
 
 ## 🚧 Future Improvements
 
@@ -713,6 +1052,9 @@ Configuration dataclasses for paths, data, training, and model parameters.
 - [ ] Cross-subject validation
 - [ ] Real-time inference pipeline
 - [ ] Web-based demo interface
+- [ ] Export to ONNX for deployment
+- [ ] Additional time-frequency analysis methods (Hilbert transform, multitaper)
+- [ ] Interactive visualization dashboards
 
 ## 🤝 Contributing
 
