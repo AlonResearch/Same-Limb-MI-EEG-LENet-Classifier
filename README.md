@@ -22,7 +22,38 @@ Motor-imagery EEG trials from the MI3 dataset are classified with the LENet arch
 - ✅ GPU/CUDA acceleration support
 - ✅ 63+ unit tests ensuring reliability
 
-## 📁 Project Structure
+## � Quick Navigation
+
+<details open>
+<summary><b>Click to expand table of contents</b></summary>
+
+### Project Setup & Infrastructure
+- [📁 Project Structure](#-project-structure) – Directory layout and file organization
+- [💻 Environment & Requirements](#-environment--requirements) – System requirements and dependencies
+- [🚀 Quick Start](#-quick-start) – Installation and setup instructions
+
+### Pipelines & Usage
+- [🔄 Complete Pipeline Workflow](#-complete-pipeline-workflow) – All 4 pipelines explained
+  - [Pipeline A: Subject-Level Training](#pipeline-a-subject-level-training)
+  - [Pipeline B: Classification Analysis](#pipeline-b-classification-analysis-depends-on-pipeline-a)
+  - [Pipeline C: Time-Frequency & Topographical Analysis](#pipeline-c-time-frequency--topographical-analysis--independent)
+  - [Pipeline D: Visualization Regeneration](#pipeline-d-visualization-regeneration-optional)
+- [🔀 Pipeline Combinations](#-pipeline-combinations) – Different execution options
+
+### Examples & API
+- [📚 Examples](#-examples) – Command-line usage and Python API
+- [🔍 Troubleshooting](#-troubleshooting) – Common issues and solutions
+
+### Development
+- [🧪 Testing](#-testing) – Running unit tests
+- [📚 Code Documentation](#-code-documentation) – Key modules and architecture
+- [🤝 Contributing](#-contributing) – Contribution guidelines
+
+</details>
+
+---
+
+## �📁 Project Structure
 
 ### Root Level (Configuration & Data)
 ```
