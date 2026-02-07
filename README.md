@@ -407,23 +407,6 @@ pip install -e ".[test]"
 
 **Important:** Always ensure your virtual environment is activated before running commands!
 
-#### Processing All Subjects
-
-To train models on all subjects in the dataset:
-```bash
-python -m mi3_eeg.run_all_subjects
-```
-
-This script will:
-- ✅ Automatically detect all `*_eeg200hz.mat` files in the derivatives folder
-- ✅ Skip subjects that have already been processed
-- ✅ Train each subject with 50 epochs
-- ✅ Save results to `reports/metrics/sub-XXX_lenet_results.json`
-- ✅ Generate figures in `reports/figures/`
-- ✅ Save trained models in `models/sub-XXX_lenet_*.pth`
-
-The script will display progress and automatically continue if a subject fails.
-
 #### Activating the Virtual Environment
 
 <details>
@@ -477,7 +460,15 @@ Process all subjects at once:
 ```bash
 python -m mi3_eeg.run_all_subjects
 ```
+This script will:
+- ✅ Automatically detect all `*_eeg200hz.mat` files in the derivatives folder
+- ✅ Skip subjects that have already been processed
+- ✅ Train each subject with 50 epochs
+- ✅ Save results to `reports/metrics/sub-XXX_lenet_results.json`
+- ✅ Generate figures in `reports/figures/`
+- ✅ Save trained models in `models/sub-XXX_lenet_*.pth`
 
+The script will display progress and automatically continue if a subject fails.
 ## 🔍 Troubleshooting
 
 ### Common Issues
