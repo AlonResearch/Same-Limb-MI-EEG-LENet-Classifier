@@ -39,7 +39,7 @@ def main(
                 If None, defaults to 'lenet'.
         epochs: Number of training epochs. If None, uses config default.
         device: Device to use ('cuda' or 'cpu'). If None, auto-detects.
-        subject_file: Subject .mat file to use. If None, uses config default.
+        subject_file: Subject .mat file to use. If None, auto-selects first available subject.
         subject_id: Subject ID. If None, inferred from subject_file.
     """
     # Initialize paths and setup logger with file output FIRST
@@ -62,27 +62,22 @@ def main(
     # === STAGE 1: Data Loading ===
     logger.info("STAGE 1: Loading and Preprocessing Data")
     
-    # Require subject file to be specified
+    # Auto-select first subject if none specified
     if subject_file is None or subject_file == "":
-        # Try to find available subject files
         paths = Paths.from_here()
         available_files = sorted(paths.dataset_derivatives.glob("*_eeg200hz.mat"))
         
-        if available_files:
+        if not available_files:
             logger.error(
-                "No subject file specified. Available subjects:\n" +
-                "\n".join(f"  {f.name}" for f in available_files) +
-                "\n\nUsage: python -m mi3_eeg.main --subject-file <filename>"
+                f"No *_eeg200hz.mat files found in {paths.dataset_derivatives}\n"
+                "Please download the MI3 dataset and place it in the derivatives folder."
             )
-        else:
-            logger.error(
-                "No subject file specified and no *_eeg200hz.mat files found in "
-                f"{paths.dataset_derivatives}\n\n"
-                "Usage: python -m mi3_eeg.main --subject-file <filename>"
-            )
-        raise ValueError(
-            f"Subject file must be specified via --subject-file argument. "
-            f"Run 'python -m mi3_eeg.main --help' for usage."
+            raise ValueError(f"No dataset files found in {paths.dataset_derivatives}")
+        
+        # Auto-select first subject
+        subject_file = available_files[0].name
+        logger.info(
+            f"No subject specified. Auto-selecting first available subject: {subject_file}"
         )
     
     # Infer subject_id from filename if not provided
