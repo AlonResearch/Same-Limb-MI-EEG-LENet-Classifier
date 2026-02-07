@@ -69,8 +69,17 @@ def load_mat_from_derivatives(
     """
     if not mat_path.exists():
         msg = (
-            f"Dataset not found at: {mat_path}\n"
-            f"Expected in BIDS derivatives folder."
+            f"\n{'='*80}\n"
+            f"ERROR: Dataset file not found\n"
+            f"{'='*80}\n"
+            f"Expected location: {mat_path}\n"
+            f"\n"
+            f"The MI3 dataset is not included in this repository.\n"
+            f"Please download it from the original source and place it in:\n"
+            f"  {mat_path.parent}/\n"
+            f"\n"
+            f"For download instructions and dataset details, please refer to the README.md\n"
+            f"{'='*80}\n"
         )
         raise FileNotFoundError(msg)
     
