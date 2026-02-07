@@ -14,11 +14,11 @@ def main():
     derivatives_path = paths.dataset_derivatives
     metrics_path = paths.reports_metrics
     
-    # Find all *_eeg200hz.mat files (skip the original sub-011_eeg.mat for now)
-    mat_files = sorted(derivatives_path.glob("*_eeg200hz.mat"))
+    # Find all .mat files (both raw and standardized formats)
+    mat_files = sorted(derivatives_path.glob("*.mat"))
     
     if not mat_files:
-        logger.error("No *_eeg200hz.mat files found in derivatives folder!")
+        logger.error("No .mat files found in derivatives folder!")
         return
     
     logger.info(f"Found {len(mat_files)} subject files:")
