@@ -135,7 +135,48 @@ def load_mat_from_derivatives(
             raise FileNotFoundError(msg)
     
     logger.info(f"Loading dataset from: {mat_path}")
-    mat_data = scio.loadmat(str(mat_path))
+    
+    # Try to load the .mat file with error handling
+    try:
+        mat_data = scio.loadmat(str(mat_path))
+    except ValueError as e:
+        msg = (
+            f"\n{'='*80}\n"
+            f"ERROR: Failed to load .mat file (corrupted or unsupported format)\n"
+            f"{'='*80}\n"
+            f"File: {mat_path}\n"
+            f"Error: {str(e)}\n"
+            f"\n"
+            f"This usually means:\n"
+            f"  1. The file is corrupted or incomplete\n"
+            f"  2. The file is in an unsupported MATLAB format\n"
+            f"  3. The file was not properly downloaded\n"
+            f"\n"
+            f"Solutions:\n"
+            f"  • Re-download the dataset from the original source\n"
+            f"  • Verify the download is complete (check file size)\n"
+            f"  • Try a different subject file to test\n"
+            f"  • Check README.md for dataset download instructions\n"
+            f"{'='*80}\n"
+        )
+        logger.error(msg)
+        raise FileNotFoundError(msg) from e
+    except Exception as e:
+        msg = (
+            f"\n{'='*80}\n"
+            f"ERROR: Unexpected error while loading .mat file\n"
+            f"{'='*80}\n"
+            f"File: {mat_path}\n"
+            f"Error: {type(e).__name__}: {str(e)}\n"
+            f"\n"
+            f"Please check that:\n"
+            f"  • File exists and is readable\n"
+            f"  • File is a valid MATLAB .mat file\n"
+            f"  • No other processes are using the file\n"
+            f"{'='*80}\n"
+        )
+        logger.error(msg)
+        raise RuntimeError(msg) from e
     
     # Detect format and load data accordingly
     from mi3_eeg.data_formatting import detect_format, convert_raw_format, format_and_save

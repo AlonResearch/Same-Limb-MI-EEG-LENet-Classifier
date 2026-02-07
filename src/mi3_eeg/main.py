@@ -100,8 +100,23 @@ def main(
         f"Sampling: {data_config.sampling_rate}Hz, Test split: {data_config.test_size * 100}%"
     )
     
-    # Load dataset
-    data_bundle = load_dataset_from_config(config=data_config, paths=paths)
+    # Load dataset with error handling
+    try:
+        data_bundle = load_dataset_from_config(config=data_config, paths=paths)
+    except (FileNotFoundError, RuntimeError) as e:
+        logger.error(str(e))
+        raise SystemExit(1) from e
+    except Exception as e:
+        logger.error(
+            f"\n{'='*80}\n"
+            f"ERROR: Unexpected error during data loading\n"
+            f"{'='*80}\n"
+            f"{type(e).__name__}: {str(e)}\n"
+            f"See above for details.\n"
+            f"{'='*80}\n"
+        )
+        raise SystemExit(1) from e
+    
     logger.info(
         f"Data shape: {data_bundle.data.shape}, "
         f"Class distribution: {data_bundle.class_distribution}"
