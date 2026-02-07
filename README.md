@@ -22,32 +22,40 @@ Motor-imagery EEG trials from the MI3 dataset are classified with the LENet arch
 - ✅ GPU/CUDA acceleration support
 - ✅ 63+ unit tests ensuring reliability
 
-## � Quick Navigation
+## 📌 Quick Navigation
 
 <details open>
 <summary><b>Click to expand table of contents</b></summary>
 
-### Project Setup & Infrastructure
+### Getting Oriented
+- [🎯 Overview](#-overview) – What this project does
 - [📁 Project Structure](#-project-structure) – Directory layout and file organization
+
+### Setup & Usage
 - [💻 Environment & Requirements](#-environment--requirements) – System requirements and dependencies
 - [🚀 Quick Start](#-quick-start) – Installation and setup instructions
+- [🔍 Troubleshooting](#-troubleshooting) – Common issues and solutions
+- [📊 Dataset](#-dataset) – Download and data layout
 
-### Pipelines & Usage
+### Run The Pipelines
 - [🔄 Complete Pipeline Workflow](#-complete-pipeline-workflow) – All 4 pipelines explained
   - [Pipeline A: Subject-Level Training](#pipeline-a-subject-level-training)
   - [Pipeline B: Classification Analysis](#pipeline-b-classification-analysis-depends-on-pipeline-a)
   - [Pipeline C: Time-Frequency & Topographical Analysis](#pipeline-c-time-frequency--topographical-analysis--independent)
   - [Pipeline D: Visualization Regeneration](#pipeline-d-visualization-regeneration-optional)
-- [🔀 Pipeline Combinations](#-pipeline-combinations) – Different execution options
+- [🔀 Pipeline Combinations](#-pipeline-combinations) – Execution options
 
-### Examples & API
-- [📚 Examples](#-examples) – Command-line usage and Python API
-- [🔍 Troubleshooting](#-troubleshooting) – Common issues and solutions
+### Results & Reference
+- [📈 Results](#-results) – Reported performance and findings
+- [🔧 Configuration](#-configuration) – Key settings
+- [📚 Module Documentation](#-module-documentation) – Core modules and analysis
+- [🚀 Quick Start Examples](#-quick-start-examples) – CLI and Python examples
 
-### Development
-- [🧪 Testing](#-testing) – Running unit tests
-- [📚 Code Documentation](#-code-documentation) – Key modules and architecture
+### Development & Community
+- [🧪 Development](#-development) – Tests and code quality
+- [🚧 Future Improvements](#-future-improvements) – Roadmap
 - [🤝 Contributing](#-contributing) – Contribution guidelines
+- [📞 Contact](#-contact) – How to reach the author
 
 </details>
 
@@ -127,190 +135,6 @@ Same-Limb-MI-EEG-LENet-Classifier/
 - **Training outputs**: Saved to `models/` and `reports/{figures,metrics,logs}/`
 - **Analysis outputs**: Grouped in `reports/group_analysis/` (separate from training)
 - **All source code**: In `src/mi3_eeg/` (including `analysis/` submodule)
-
-## 🔄 Complete Pipeline Workflow
-
-The project has **4 independent pipelines** with flexible execution options:
-
-### Pipeline A: Subject-Level Training
-
-Train individual neural network models (no external dependencies needed):
-
-```bash
-python -m mi3_eeg.run_all_subjects
-```
-
-**Timing:** 30-60 minutes
-
-**Process:**
-1. Loads each subject's EEG data from `Datasets/MI3/derivatives/`
-2. Trains a LENet model on that subject's data
-3. Evaluates on held-out test set
-4. Saves model weights and per-subject metrics
-
-**Outputs:**
-- `models/sub-XXX_lenet_best.pth` - Best model per subject (25 models)
-- `models/sub-XXX_lenet_final.pth` - Final model per subject
-- `reports/metrics/sub-XXX_lenet_results.json` - Per-subject performance
-- `reports/figures/sub-XXX_lenet_*.png` - Confusion matrices, training curves
-
-**Results by Subject:**
-- Accuracy ranges from 37-75% across subjects
-- Mean accuracy: 51.47% ± 8.19%
-
----
-
-### Pipeline B: Classification Analysis (Depends on Pipeline A)
-
-Aggregate training results and perform statistical analysis on classification performance:
-
-```bash
-python -m mi3_eeg.analysis.group_analysis --analysis-type classification
-```
-
-**Timing:** 2-5 minutes
-
-**Dependencies:** ⚠️ **Requires Pipeline A** - must run after training completes
-
-**3-Step Analysis:**
-
-1. **Metrics Aggregation**
-   - Loads all per-subject results from `reports/metrics/`
-   - Aggregates accuracy, precision, recall, F1-score
-   - Creates summary: `lenet_all_subjects_metrics.csv`
-
-2. **Performance Visualization**
-   - Accuracy distribution histogram (all 25 subjects)
-   - Subject ranking bar chart
-   - Per-class accuracy boxplots
-   - Saves to `reports/group_analysis/figures/`
-
-3. **Statistical Testing**
-   - One-way ANOVA across classes (Rest/Elbow/Hand)
-   - Pairwise t-tests with FDR correction (Benjamini-Hochberg)
-   - Effect size calculations (Cohen's d, η²)
-   - Saves to `reports/group_analysis/statistics/`
-
-**Outputs:**
-```
-reports/group_analysis/figures/
-├── lenet_accuracy_distribution.png
-├── lenet_subject_ranking.png
-└── lenet_class_accuracy_boxplot.png
-
-reports/group_analysis/statistics/
-├── lenet_classification_statistics.json
-└── lenet_classification_statistics.txt
-```
-
-**Key Findings:**
-- **One-way ANOVA:** F(2,72) = 5.83, **p = 0.0045** ✓✓✓
-- **Effect Size:** η² = 0.139 (moderate)
-- Rest significantly easier to classify than motor imagery (p=0.0005)
-
----
-
-### Pipeline C: Time-Frequency & Topographical Analysis ⭐ **INDEPENDENT**
-
-Analyze raw EEG data with no dependency on trained models:
-
-```bash
-python -m mi3_eeg.analysis.group_analysis --analysis-type tfr
-```
-
-**Timing:** 15-30 minutes
-
-**Dependencies:** ✅ NONE - only needs raw `.mat` files
-
-**🚀 Can run in parallel with Pipeline A!** Since they use different data sources, you can save 20+ minutes by running them simultaneously.
-
-**Analysis:**
-
-1. **Time-Frequency Decomposition**
-   - Loads raw EEG from `Datasets/MI3/derivatives/`
-   - Morlet wavelet decomposition (4-40 Hz)
-   - Event-related desynchronization/synchronization (ERD/ERS)
-   - Batch processing: Memory-efficient (~2-3 GB per batch)
-
-2. **Topographical Mapping**
-   - Brain maps for Alpha (8-13 Hz) and Beta (13-30 Hz) bands
-   - Standard 10-20 electrode montage
-   - MNE-based visualization
-
-3. **Caching**
-   - Joblib-based caching at `~/.cache/mi3_eeg/tfr/`
-   - Saves `aggregated_tfr_data.pkl` for fast regeneration
-
-**Outputs:**
-```
-reports/group_analysis/tfr_analysis/
-├── group_time_frequency_maps.png (4.27 MB)
-├── group_topomap_alpha.png (1.79 MB)
-└── group_topomap_beta.png (1.72 MB)
-```
-
-**Key Findings:**
-- Clear mu rhythm desynchronization (8-13 Hz) during motor imagery
-- Beta band (13-30 Hz) modulation over motor cortex
-- Topographical localization consistent with contralateral motor areas
-
----
-
-### Pipeline D: Visualization Regeneration (Optional)
-
-Regenerate TFR visualizations from cached data without recomputation:
-
-```bash
-python -m mi3_eeg.analysis.regenerate_visualizations
-```
-
-**Timing:** 10-30 seconds
-
-**Dependencies:** Requires Pipeline C to have run at least once (for cache)
-
-**Use Cases:**
-- Tweak plot styling (DPI, colors, layout)
-- Export to different formats
-- Generate custom visualizations
-- Fast iteration (~seconds instead of minutes)
-
----
-
-## 🔀 Pipeline Combinations
-
-**Option 1: Training Only**
-```
-Pipeline A → Done (30-60 min)
-Get 25 trained models + per-subject results
-```
-
-**Option 2: Training + Classification Analysis**
-```
-Pipeline A → Pipeline B → Done (32-65 min)
-Get trained models + cross-subject classification statistics
-```
-
-**Option 3: EEG Analysis Only (No Training)**
-```
-Pipeline C → Done (15-30 min)
-Get TFR/topography without training models (quick analysis!)
-```
-
-**Option 4: All Analysis (Recommended for papers) - Parallel Execution**
-```
-Terminal 1: python -m mi3_eeg.run_all_subjects          # Pipeline A (30-60 min)
-Terminal 2: python -m mi3_eeg.analysis.group_analysis --analysis-type tfr  # Pipeline C (15-30 min, runs in parallel!)
-Terminal 3: (after A) python -m mi3_eeg.analysis.group_analysis --analysis-type classification  # Pipeline B (2-5 min)
-
-Total Time: ~50 minutes (instead of 73 minutes sequential!)
-Time Saved: ~23 minutes by running A & C in parallel
-```
-
-**Option 5: Tweak Visualizations**
-```
-Pipeline C → Pipeline D → Done (seconds)
-Quickly regenerate TFR plots after adjusting parameters
-```
 
 ## 💻 Environment & Requirements
 
@@ -837,6 +661,190 @@ The project expects BIDS-formatted MI3 data in `Datasets/MI3/`:
 
 1. Python loads from derivatives → Class balancing → PyTorch tensors
 2. Train/test split (80/20) → DataLoaders → Model training
+
+## 🔄 Complete Pipeline Workflow
+
+The project has **4 independent pipelines** with flexible execution options:
+
+### Pipeline A: Subject-Level Training
+
+Train individual neural network models (no external dependencies needed):
+
+```bash
+python -m mi3_eeg.run_all_subjects
+```
+
+**Timing:** 30-60 minutes
+
+**Process:**
+1. Loads each subject's EEG data from `Datasets/MI3/derivatives/`
+2. Trains a LENet model on that subject's data
+3. Evaluates on held-out test set
+4. Saves model weights and per-subject metrics
+
+**Outputs:**
+- `models/sub-XXX_lenet_best.pth` - Best model per subject (25 models)
+- `models/sub-XXX_lenet_final.pth` - Final model per subject
+- `reports/metrics/sub-XXX_lenet_results.json` - Per-subject performance
+- `reports/figures/sub-XXX_lenet_*.png` - Confusion matrices, training curves
+
+**Results by Subject:**
+- Accuracy ranges from 37-75% across subjects
+- Mean accuracy: 51.47% ± 8.19%
+
+---
+
+### Pipeline B: Classification Analysis (Depends on Pipeline A)
+
+Aggregate training results and perform statistical analysis on classification performance:
+
+```bash
+python -m mi3_eeg.analysis.group_analysis --analysis-type classification
+```
+
+**Timing:** 2-5 minutes
+
+**Dependencies:** ⚠️ **Requires Pipeline A** - must run after training completes
+
+**3-Step Analysis:**
+
+1. **Metrics Aggregation**
+  - Loads all per-subject results from `reports/metrics/`
+  - Aggregates accuracy, precision, recall, F1-score
+  - Creates summary: `lenet_all_subjects_metrics.csv`
+
+2. **Performance Visualization**
+  - Accuracy distribution histogram (all 25 subjects)
+  - Subject ranking bar chart
+  - Per-class accuracy boxplots
+  - Saves to `reports/group_analysis/figures/`
+
+3. **Statistical Testing**
+  - One-way ANOVA across classes (Rest/Elbow/Hand)
+  - Pairwise t-tests with FDR correction (Benjamini-Hochberg)
+  - Effect size calculations (Cohen's d, η²)
+  - Saves to `reports/group_analysis/statistics/`
+
+**Outputs:**
+```
+reports/group_analysis/figures/
+├── lenet_accuracy_distribution.png
+├── lenet_subject_ranking.png
+└── lenet_class_accuracy_boxplot.png
+
+reports/group_analysis/statistics/
+├── lenet_classification_statistics.json
+└── lenet_classification_statistics.txt
+```
+
+**Key Findings:**
+- **One-way ANOVA:** F(2,72) = 5.83, **p = 0.0045** ✓✓✓
+- **Effect Size:** η² = 0.139 (moderate)
+- Rest significantly easier to classify than motor imagery (p=0.0005)
+
+---
+
+### Pipeline C: Time-Frequency & Topographical Analysis ⭐ **INDEPENDENT**
+
+Analyze raw EEG data with no dependency on trained models:
+
+```bash
+python -m mi3_eeg.analysis.group_analysis --analysis-type tfr
+```
+
+**Timing:** 15-30 minutes
+
+**Dependencies:** ✅ NONE - only needs raw `.mat` files
+
+**🚀 Can run in parallel with Pipeline A!** Since they use different data sources, you can save 20+ minutes by running them simultaneously.
+
+**Analysis:**
+
+1. **Time-Frequency Decomposition**
+  - Loads raw EEG from `Datasets/MI3/derivatives/`
+  - Morlet wavelet decomposition (4-40 Hz)
+  - Event-related desynchronization/synchronization (ERD/ERS)
+  - Batch processing: Memory-efficient (~2-3 GB per batch)
+
+2. **Topographical Mapping**
+  - Brain maps for Alpha (8-13 Hz) and Beta (13-30 Hz) bands
+  - Standard 10-20 electrode montage
+  - MNE-based visualization
+
+3. **Caching**
+  - Joblib-based caching at `~/.cache/mi3_eeg/tfr/`
+  - Saves `aggregated_tfr_data.pkl` for fast regeneration
+
+**Outputs:**
+```
+reports/group_analysis/tfr_analysis/
+├── group_time_frequency_maps.png (4.27 MB)
+├── group_topomap_alpha.png (1.79 MB)
+└── group_topomap_beta.png (1.72 MB)
+```
+
+**Key Findings:**
+- Clear mu rhythm desynchronization (8-13 Hz) during motor imagery
+- Beta band (13-30 Hz) modulation over motor cortex
+- Topographical localization consistent with contralateral motor areas
+
+---
+
+### Pipeline D: Visualization Regeneration (Optional)
+
+Regenerate TFR visualizations from cached data without recomputation:
+
+```bash
+python -m mi3_eeg.analysis.regenerate_visualizations
+```
+
+**Timing:** 10-30 seconds
+
+**Dependencies:** Requires Pipeline C to have run at least once (for cache)
+
+**Use Cases:**
+- Tweak plot styling (DPI, colors, layout)
+- Export to different formats
+- Generate custom visualizations
+- Fast iteration (~seconds instead of minutes)
+
+---
+
+## 🔀 Pipeline Combinations
+
+**Option 1: Training Only**
+```
+Pipeline A → Done (30-60 min)
+Get 25 trained models + per-subject results
+```
+
+**Option 2: Training + Classification Analysis**
+```
+Pipeline A → Pipeline B → Done (32-65 min)
+Get trained models + cross-subject classification statistics
+```
+
+**Option 3: EEG Analysis Only (No Training)**
+```
+Pipeline C → Done (15-30 min)
+Get TFR/topography without training models (quick analysis!)
+```
+
+**Option 4: All Analysis (Recommended for papers) - Parallel Execution**
+```
+Terminal 1: python -m mi3_eeg.run_all_subjects          # Pipeline A (30-60 min)
+Terminal 2: python -m mi3_eeg.analysis.group_analysis --analysis-type tfr  # Pipeline C (15-30 min, runs in parallel!)
+Terminal 3: (after A) python -m mi3_eeg.analysis.group_analysis --analysis-type classification  # Pipeline B (2-5 min)
+
+Total Time: ~50 minutes (instead of 73 minutes sequential!)
+Time Saved: ~23 minutes by running A & C in parallel
+```
+
+**Option 5: Tweak Visualizations**
+```
+Pipeline C → Pipeline D → Done (seconds)
+Quickly regenerate TFR plots after adjusting parameters
+```
 
 ## 🧪 Development
 
