@@ -153,6 +153,15 @@ else
     ALL_PASS=false
 fi
 
+# Check data_formatting submodule
+echo -n "Checking data_formatting submodule..."
+if python -c "from mi3_eeg.data_formatting import convert_raw_format, detect_format, format_and_save; print(' OK')" 2>/dev/null; then
+    write_success "data_formatting submodule ready"
+else
+    write_error "data_formatting submodule import failed"
+    ALL_PASS=false
+fi
+
 # Check PyTorch with CUDA
 echo -n "Checking PyTorch + CUDA..."
 TORCH_INFO=$(python -c "

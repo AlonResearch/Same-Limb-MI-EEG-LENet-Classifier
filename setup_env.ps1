@@ -144,6 +144,16 @@ try {
     $allPass = $false
 }
 
+# Check data_formatting submodule
+Write-Host "Checking data_formatting submodule..." -NoNewline
+try {
+    python -c "from mi3_eeg.data_formatting import convert_raw_format, detect_format, format_and_save" -ErrorAction Stop
+    Write-Success "data_formatting submodule ready"
+} catch {
+    Write-Error-Custom "data_formatting submodule import failed"
+    $allPass = $false
+}
+
 # Check PyTorch with CUDA
 Write-Host "Checking PyTorch + CUDA..." -NoNewline
 try {
