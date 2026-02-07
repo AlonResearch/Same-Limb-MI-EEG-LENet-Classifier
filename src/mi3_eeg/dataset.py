@@ -73,52 +73,66 @@ def load_mat_from_derivatives(
         if derivatives_folder.exists():
             raw_files = list(derivatives_folder.glob('*.mat'))
             if raw_files:
-                detected_raw = False
+                # Auto-detect and convert raw format files
+                from mi3_eeg.data_formatting import detect_format, format_and_save
+                
+                logger.info(f"Detected {len(raw_files)} .mat files in derivatives folder")
+                logger.info("Scanning for raw format files (task_data/task_label/rest_data)...")
+                
+                converted_count = 0
                 for f in raw_files:
                     try:
                         mat_test = scio.loadmat(str(f), simplify_cells=True)
                         if all(k in mat_test for k in ['task_data', 'task_label', 'rest_data']):
-                            detected_raw = True
-                            break
-                    except Exception:
+                            logger.info(f"Converting raw format: {f.name}")
+                            # Convert this raw file
+                            converted_path = format_and_save(
+                                input_path=f,
+                                output_dir=derivatives_folder
+                            )
+                            converted_count += 1
+                            logger.info(f"✓ Converted: {converted_path.name}")
+                    except Exception as e:
+                        # Not a raw format file or cannot convert, skip it
                         pass
                 
-                if detected_raw:
-                    msg = (
-                        f"\n{'='*80}\n"
-                        f"ERROR: Dataset file not found, but raw format files detected\n"
-                        f"{'='*80}\n"
-                        f"Expected standardized file: {mat_path}\n"
-                        f"Found raw format files in: {derivatives_folder}/\n"
-                        f"\n"
-                        f"Please convert your raw format files to standardized format:\n"
-                        f"  python -m mi3_eeg.data_formatting.convert_batch <input_folder>\n"
-                        f"\n"
-                        f"This will scan the input folder for raw MI3 .mat files and save\n"
-                        f"standardized versions to the derivatives folder.\n"
-                        f"\n"
-                        f"For a single file, use:\n"
-                        f"  python -m mi3_eeg.data_formatting.convert_subject <file.mat> [subject_id]\n"
-                        f"\n"
-                        f"For more details, see README.md\n"
-                        f"{'='*80}\n"
-                    )
-                    raise FileNotFoundError(msg)
+                if converted_count > 0:
+                    logger.info(f"\nSuccessfully auto-converted {converted_count} raw format file(s)")
+                    # Try loading again now that files are converted
+                    if mat_path.exists():
+                        logger.info("Retrying to load converted standardized dataset...")
+                    else:
+                        msg = (
+                            f"\n{'='*80}\n"
+                            f"ERROR: Dataset file not found after conversion\n"
+                            f"{'='*80}\n"
+                            f"Expected: {mat_path}\n"
+                            f"Converted {converted_count} raw file(s) but target file not found.\n"
+                            f"\n"
+                            f"This may happen if the filename pattern doesn't match.\n"
+                            f"Your converted files are saved in: {derivatives_folder}/\n"
+                            f"Please check the filenames and ensure they follow the pattern:\n"
+                            f"  sub-XXX_eegSSSHz.mat\n"
+                            f"where XXX is subject number and SSS is sampling rate.\n"
+                            f"{'='*80}\n"
+                        )
+                        raise FileNotFoundError(msg)
         
-        msg = (
-            f"\n{'='*80}\n"
-            f"ERROR: Dataset file not found\n"
-            f"{'='*80}\n"
-            f"Expected location: {mat_path}\n"
-            f"\n"
-            f"The MI3 dataset is not included in this repository.\n"
-            f"Please download it from the original source and place it in:\n"
-            f"  {mat_path.parent}/\n"
-            f"\n"
-            f"For download instructions and dataset details, please refer to the README.md\n"
-            f"{'='*80}\n"
-        )
-        raise FileNotFoundError(msg)
+        if not mat_path.exists():
+            msg = (
+                f"\n{'='*80}\n"
+                f"ERROR: Dataset file not found\n"
+                f"{'='*80}\n"
+                f"Expected location: {mat_path}\n"
+                f"\n"
+                f"The MI3 dataset is not included in this repository.\n"
+                f"Please download it from the original source and place it in:\n"
+                f"  {mat_path.parent}/\n"
+                f"\n"
+                f"For download instructions and dataset details, please refer to the README.md\n"
+                f"{'='*80}\n"
+            )
+            raise FileNotFoundError(msg)
     
     logger.info(f"Loading dataset from: {mat_path}")
     mat_data = scio.loadmat(str(mat_path))
