@@ -65,11 +65,11 @@ def main(
     # Auto-select first subject if none specified
     if subject_file is None or subject_file == "":
         paths = Paths.from_here()
-        available_files = sorted(paths.dataset_derivatives.glob("*_eeg200hz.mat"))
+        available_files = sorted(paths.dataset_derivatives.glob("*.mat"))
         
         if not available_files:
             logger.error(
-                f"No *_eeg200hz.mat files found in {paths.dataset_derivatives}\n"
+                f"No .mat files found in {paths.dataset_derivatives}\n"
                 "Please download the MI3 dataset and place it in the derivatives folder."
             )
             raise ValueError(f"No dataset files found in {paths.dataset_derivatives}")
