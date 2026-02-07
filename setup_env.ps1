@@ -1,4 +1,4 @@
-# Setup script for MI3 EEG Project (Windows PowerShell)
+# Setup script for MI3 EEG Project (Windows PowerShell)  
 # Automated environment setup with GPU-enabled PyTorch
 # Simple, clean, and foolproof for non-technical users
 
@@ -14,29 +14,31 @@ $ErrorActionPreference = "Continue"
 
 function Write-Section {
     param([string]$Title)
-    Write-Host "`n============================================================" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "============================================================" -ForegroundColor Cyan
     Write-Host $Title -ForegroundColor Cyan
     Write-Host "============================================================" -ForegroundColor Cyan
 }
 
 function Write-Step {
     param([string]$Message)
-    Write-Host "`n$Message" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host $Message -ForegroundColor Yellow
 }
 
 function Write-Success {
     param([string]$Message)
-    Write-Host "✅ $Message" -ForegroundColor Green
+    Write-Host "[OK] $Message" -ForegroundColor Green
 }
 
 function Write-Error-Custom {
     param([string]$Message)
-    Write-Host "❌ $Message" -ForegroundColor Red
+    Write-Host "[ERROR] $Message" -ForegroundColor Red
 }
 
 function Write-Info {
     param([string]$Message)
-    Write-Host "ℹ️  $Message" -ForegroundColor Cyan
+    Write-Host "[INFO] $Message" -ForegroundColor Cyan
 }
 
 # === MAIN SETUP ===
@@ -121,20 +123,21 @@ Write-Step "Step 5/5: Verifying installation..."
 
 $allPass = $true
 
-# Check main package
-Write-Host "`nChecking mi3_eeg package..." -NoNewline
+# Check main package  
+Write-Host ""
+Write-Host "Checking mi3_eeg package..." -NoNewline
 try {
-    python -c "import mi3_eeg; print(f' v{mi3_eeg.__version__}')" -ErrorAction Stop
+    python -c "import importlib.metadata; v = importlib.metadata.version('mi3-eeg'); print(' v' + v)" -ErrorAction Stop | Out-Null
     Write-Success "mi3_eeg package ready"
 } catch {
-    Write-Error-Custom "mi3_eeg import failed"
+    Write-Error-Custom "mi3_eeg package not found"
     $allPass = $false
 }
 
 # Check analysis submodule
 Write-Host "Checking analysis submodule..." -NoNewline
 try {
-    python -c "from mi3_eeg.analysis import group_analysis; print(' OK')" -ErrorAction Stop
+    python -c "from mi3_eeg.analysis import group_analysis" -ErrorAction Stop
     Write-Success "analysis submodule ready"
 } catch {
     Write-Error-Custom "analysis submodule import failed"
@@ -144,24 +147,17 @@ try {
 # Check PyTorch with CUDA
 Write-Host "Checking PyTorch + CUDA..." -NoNewline
 try {
-    $torchInfo = python -c @"
-import torch
-cuda_available = torch.cuda.is_available()
-print(f'{torch.__version__}|{cuda_available}')
-if cuda_available:
-    print(torch.cuda.get_device_name(0))
-"@ -ErrorAction Stop
-    
-    $parts = $torchInfo -split '\|'
-    $version = $parts[0]
-    $cudaAvail = $parts[1]
+    $torchInfo = python -c 'import torch; print(torch.__version__); print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU")' -ErrorAction Stop
+    $lines = $torchInfo.Split([Environment]::NewLine)
+    $version = $lines[0]
+    $cudaAvail = $lines[1]
+    $device = $lines[2]
     
     if ($cudaAvail -eq "True") {
-        $gpuName = $parts[2]
-        Write-Success "PyTorch $version with CUDA ($gpuName)"
+        Write-Success "PyTorch $version with CUDA ($device)"
     } else {
         Write-Host ""
-        Write-Info "PyTorch $version installed (CPU only - no GPU detected)"
+        Write-Info "PyTorch $version installed (CPU only)"
     }
 } catch {
     Write-Error-Custom "PyTorch verification failed"
@@ -171,11 +167,8 @@ if cuda_available:
 # Check key analysis dependencies
 Write-Host "Checking analysis dependencies..." -NoNewline
 try {
-    python -c @"
-import mne, joblib, seaborn, h5py, pywt
-print(' OK')
-"@ -ErrorAction Stop
-    Write-Success "All analysis dependencies ready (mne, joblib, seaborn, h5py, pywavelets)"
+    python -c "import mne, joblib, seaborn, h5py, pywt" -ErrorAction Stop
+    Write-Success "All analysis dependencies ready"
 } catch {
     Write-Error-Custom "Missing analysis dependencies"
     Write-Info "Required: mne, joblib, seaborn, h5py, pywavelets"
@@ -187,19 +180,19 @@ Write-Section "Setup Result"
 
 if ($allPass) {
     Write-Host ""
-    Write-Success "Setup completed successfully! 🎉"
+    Write-Success "Setup completed successfully!"
     Write-Host ""
     Write-Host "Next steps:" -ForegroundColor Green
-    Write-Host "  • Activate environment:" -ForegroundColor Yellow
+    Write-Host "  - Activate environment:"
     Write-Host "    .\.venv\Scripts\Activate.ps1" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "  • Train models:" -ForegroundColor Yellow
+    Write-Host "  - Train models:"
     Write-Host "    python -m mi3_eeg.main" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "  • Run tests:" -ForegroundColor Yellow
+    Write-Host "  - Run tests:"
     Write-Host "    pytest" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "  • Run group analysis:" -ForegroundColor Yellow
+    Write-Host "  - Run group analysis:"
     Write-Host "    python -m mi3_eeg.analysis.group_analysis" -ForegroundColor Cyan
     Write-Host ""
     exit 0
