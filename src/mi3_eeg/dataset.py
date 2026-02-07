@@ -135,37 +135,6 @@ def load_mat_from_derivatives(
             raise FileNotFoundError(msg)
     
     logger.info(f"Loading dataset from: {mat_path}")
-
-    # Detect Git LFS pointer files early to provide a clear fix path.
-    try:
-        with mat_path.open("rb") as handle:
-            header = handle.read(256)
-        header_text = header.decode("utf-8", errors="ignore")
-        if "git-lfs.github.com/spec/v1" in header_text and "oid sha256:" in header_text:
-            msg = (
-                f"\n{'='*80}\n"
-                f"ERROR: Dataset file is a Git LFS pointer, not real data\n"
-                f"{'='*80}\n"
-                f"File: {mat_path}\n"
-                f"\n"
-                f"This file is a small text pointer managed by Git LFS.\n"
-                f"The actual .mat data was not downloaded.\n"
-                f"\n"
-                f"Fix options:\n"
-                f"  1) If the data exists in LFS, run: git lfs pull\n"
-                f"  2) Download the MI3 dataset from the original source and place\n"
-                f"     the .mat files in: {mat_path.parent}/\n"
-                f"\n"
-                f"Then re-run the pipeline. See README.md for details.\n"
-                f"{'='*80}\n"
-            )
-            logger.error(msg)
-            raise FileNotFoundError(msg)
-    except FileNotFoundError:
-        raise
-    except Exception:
-        # If header read fails, fall back to normal load path.
-        pass
     
     # Try to load the .mat file with error handling
     try:
