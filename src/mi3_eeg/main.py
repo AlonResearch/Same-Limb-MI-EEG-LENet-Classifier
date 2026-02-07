@@ -62,24 +62,43 @@ def main(
     # === STAGE 1: Data Loading ===
     logger.info("STAGE 1: Loading and Preprocessing Data")
     
-    # Override config if subject file is provided
-    if subject_file is not None:
-        # Infer subject_id from filename if not provided
-        if subject_id is None:
-            subject_id = subject_file.split('_')[0]
-        # Infer sampling rate from filename
-        sampling_rate = 90  # default
-        if '200hz' in subject_file.lower():
-            sampling_rate = 200
-        elif '90hz' in subject_file.lower():
-            sampling_rate = 90
-        data_config = DataConfig(
-            mat_filename=subject_file,
-            subject_id=subject_id,
-            sampling_rate=sampling_rate,
+    # Require subject file to be specified
+    if subject_file is None or subject_file == "":
+        # Try to find available subject files
+        paths = Paths.from_here()
+        available_files = sorted(paths.dataset_derivatives.glob("*_eeg200hz.mat"))
+        
+        if available_files:
+            logger.error(
+                "No subject file specified. Available subjects:\n" +
+                "\n".join(f"  {f.name}" for f in available_files) +
+                "\n\nUsage: python -m mi3_eeg.main --subject-file <filename>"
+            )
+        else:
+            logger.error(
+                "No subject file specified and no *_eeg200hz.mat files found in "
+                f"{paths.dataset_derivatives}\n\n"
+                "Usage: python -m mi3_eeg.main --subject-file <filename>"
+            )
+        raise ValueError(
+            f"Subject file must be specified via --subject-file argument. "
+            f"Run 'python -m mi3_eeg.main --help' for usage."
         )
-    else:
-        data_config = DataConfig()
+    
+    # Infer subject_id from filename if not provided
+    if subject_id is None:
+        subject_id = subject_file.split('_')[0]
+    # Infer sampling rate from filename
+    sampling_rate = 90  # default
+    if '200hz' in subject_file.lower():
+        sampling_rate = 200
+    elif '90hz' in subject_file.lower():
+        sampling_rate = 90
+    data_config = DataConfig(
+        mat_filename=subject_file,
+        subject_id=subject_id,
+        sampling_rate=sampling_rate,
+    )
     
     logger.info(
         f"Dataset: {data_config.mat_filename}, Subject: {data_config.subject_id}, "

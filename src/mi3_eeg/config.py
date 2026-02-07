@@ -91,8 +91,8 @@ class DataConfig:
         validate_timepoints: Whether to validate timepoints against expected_sampling_rate.
     """
 
-    mat_filename: str = "sub-008_eeg200hz.mat"
-    subject_id: str = "sub-008"
+    mat_filename: str = ""
+    subject_id: str = ""
     sampling_rate: int = 200
     bandpass_filter: tuple[int, int] = (7, 35)
     num_channels: int = 62
