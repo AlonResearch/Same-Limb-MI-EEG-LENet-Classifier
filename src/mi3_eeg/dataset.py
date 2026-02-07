@@ -68,6 +68,43 @@ def load_mat_from_derivatives(
         KeyError: If required keys are missing.
     """
     if not mat_path.exists():
+        # Check if there are raw format files in the derivatives folder
+        derivatives_folder = mat_path.parent
+        if derivatives_folder.exists():
+            raw_files = list(derivatives_folder.glob('*.mat'))
+            if raw_files:
+                detected_raw = False
+                for f in raw_files:
+                    try:
+                        mat_test = scio.loadmat(str(f), simplify_cells=True)
+                        if all(k in mat_test for k in ['task_data', 'task_label', 'rest_data']):
+                            detected_raw = True
+                            break
+                    except Exception:
+                        pass
+                
+                if detected_raw:
+                    msg = (
+                        f"\n{'='*80}\n"
+                        f"ERROR: Dataset file not found, but raw format files detected\n"
+                        f"{'='*80}\n"
+                        f"Expected standardized file: {mat_path}\n"
+                        f"Found raw format files in: {derivatives_folder}/\n"
+                        f"\n"
+                        f"Please convert your raw format files to standardized format:\n"
+                        f"  python -m mi3_eeg.data_formatting.convert_batch <input_folder>\n"
+                        f"\n"
+                        f"This will scan the input folder for raw MI3 .mat files and save\n"
+                        f"standardized versions to the derivatives folder.\n"
+                        f"\n"
+                        f"For a single file, use:\n"
+                        f"  python -m mi3_eeg.data_formatting.convert_subject <file.mat> [subject_id]\n"
+                        f"\n"
+                        f"For more details, see README.md\n"
+                        f"{'='*80}\n"
+                    )
+                    raise FileNotFoundError(msg)
+        
         msg = (
             f"\n{'='*80}\n"
             f"ERROR: Dataset file not found\n"
@@ -113,8 +150,18 @@ def load_mat_from_derivatives(
             all_data = mat_data["all_data"]
             all_label = mat_data["all_label"]
             inferred_sampling_rate = int(mat_data.get("sampling_rate", [90])[0])
+            
+            # Ensure consistent label shape
+            all_label = np.atleast_1d(all_label).flatten()
+            if all_label.ndim == 1:
+                all_label = all_label.reshape(-1, 1)
         except Exception as e:
             logger.warning(f"Could not save formatted file: {e}, using in-memory conversion")
+            logger.warning(
+                "WARNING: Using in-memory conversion. This is inefficient for repeated use.\n"
+                "For better performance, run: python -m mi3_eeg.data_formatting.convert_subject <file> [subject_id]\n"
+                "This will save the converted file permanently to the derivatives folder."
+            )
             # Fallback: use in-memory conversion
             task_data = mat_data['task_data']
             task_label = mat_data['task_label']
@@ -123,6 +170,11 @@ def load_mat_from_derivatives(
             all_data, all_label, inferred_sampling_rate = convert_raw_format(
                 task_data, task_label, rest_data
             )
+            
+            # Ensure consistent label shape after in-memory conversion
+            all_label = np.atleast_1d(all_label).flatten()
+            if all_label.ndim == 1:
+                all_label = all_label.reshape(-1, 1)
         
         # Update expected sampling rate if not provided
         if expected_sampling_rate is None:
@@ -136,6 +188,11 @@ def load_mat_from_derivatives(
         except KeyError as e:
             msg = f"Required key {e} not found in .mat file"
             raise KeyError(msg) from e
+        
+        # Ensure labels are in consistent shape (samples, 1) or (samples,)
+        all_label = np.atleast_1d(all_label).flatten()
+        if all_label.ndim == 1:
+            all_label = all_label.reshape(-1, 1)
     
     # Validate timepoints if requested
     if validate_timepoints and expected_sampling_rate is not None:
