@@ -137,7 +137,10 @@ try {
 # Check analysis submodule
 Write-Host "Checking analysis submodule..." -NoNewline
 try {
-    python -c "from mi3_eeg.analysis import group_analysis" -ErrorAction Stop
+    python -c "from mi3_eeg.analysis import group_analysis" 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Import failed with exit code $LASTEXITCODE"
+    }
     Write-Success "analysis submodule ready"
 } catch {
     Write-Error-Custom "analysis submodule import failed"
@@ -147,7 +150,10 @@ try {
 # Check data_formatting submodule
 Write-Host "Checking data_formatting submodule..." -NoNewline
 try {
-    python -c "from mi3_eeg.data_formatting import convert_raw_format, detect_format, format_and_save" -ErrorAction Stop
+    python -c "from mi3_eeg.data_formatting import convert_raw_format, detect_format, format_and_save" 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Import failed with exit code $LASTEXITCODE"
+    }
     Write-Success "data_formatting submodule ready"
 } catch {
     Write-Error-Custom "data_formatting submodule import failed"

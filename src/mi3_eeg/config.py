@@ -35,6 +35,7 @@ class Paths:
     reports_figures: Path
     reports_metrics: Path
     reports_logs: Path
+    reports_group_analysis: Path
 
     @staticmethod
     def from_here() -> Paths:
@@ -55,6 +56,7 @@ class Paths:
             reports_figures=root / "reports" / "figures",
             reports_metrics=root / "reports" / "metrics",
             reports_logs=root / "reports" / "logs",
+            reports_group_analysis=root / "reports" / "group_analysis",
         )
 
     def create_directories(self) -> None:
@@ -64,6 +66,7 @@ class Paths:
             "reports_figures",
             "reports_metrics",
             "reports_logs",
+            "reports_group_analysis",
         ]:
             path = getattr(self, path_attr)
             path.mkdir(parents=True, exist_ok=True)
@@ -138,6 +141,28 @@ class ModelConfig:
     channel_count: int = 62
     classes_num: int = 3
     drop_out: float = 0.4
+
+
+@dataclass(frozen=True)
+class GroupAnalysisConfig:
+    """Group-level analysis configuration.
+    
+    Attributes:
+        sampling_rate: EEG sampling rate in Hz.
+        tfr_freqs: Tuple of (f_min, f_max, f_step) for time-frequency decomposition.
+        electrodes_of_interest: List of electrode names for topographical analysis.
+        baseline_method: Method for baseline correction ('ratio' or 'percent').
+        use_cache: Whether to cache computed TFR data.
+    """
+
+    sampling_rate: int = 200
+    tfr_freqs: tuple[int, int, int] = (1, 50, 1)
+    electrodes_of_interest: tuple[str, ...] = (
+        "Cz", "C3", "C4", "CPz", "CP3", "CP4",
+        "Pz", "P3", "P4", "POz", "PO3", "PO4",
+    )
+    baseline_method: str = "ratio"
+    use_cache: bool = True
 
 
 # Global constants

@@ -146,7 +146,7 @@ fi
 
 # Check analysis submodule
 echo -n "Checking analysis submodule..."
-if python -c "from mi3_eeg.analysis import group_analysis; print(' OK')" 2>/dev/null; then
+if python -c "from mi3_eeg.analysis import group_analysis" 2>&1; then
     write_success "analysis submodule ready"
 else
     write_error "analysis submodule import failed"
@@ -155,7 +155,7 @@ fi
 
 # Check data_formatting submodule
 echo -n "Checking data_formatting submodule..."
-if python -c "from mi3_eeg.data_formatting import convert_raw_format, detect_format, format_and_save; print(' OK')" 2>/dev/null; then
+if python -c "from mi3_eeg.data_formatting import convert_raw_format, detect_format, format_and_save" 2>&1; then
     write_success "data_formatting submodule ready"
 else
     write_error "data_formatting submodule import failed"
