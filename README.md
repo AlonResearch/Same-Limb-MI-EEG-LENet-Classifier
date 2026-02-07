@@ -790,8 +790,9 @@ regenerate_from_cache()
 #### Downloading the Dataset
 
 1. **Access the MI3 Dataset:**
-   - Dataset paper: [Motor Imagery Dataset of Same Limb during Motor Execution and Motor Imagery](https://doi.org/10.1038/s41597-023-02020-0)
-   - OpenNeuro: [https://openneuro.org/datasets/ds004148](https://openneuro.org/datasets/ds004148)
+   - Dataset paper: [Multi-channel EEG recording during motor imagery of different joints from the same limb
+](https://doi.org/10.1038/s41597-020-0535-2)
+   - Harvard Dataverse: [https://doi.org/10.7910/DVN/RBN3XG](https://doi.org/10.7910/DVN/RBN3XG)
    - Direct download of preprocessed files is available from the dataset source
 
 2. **Download preprocessed derivatives:**
