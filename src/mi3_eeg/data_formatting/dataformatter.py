@@ -198,6 +198,8 @@ def format_and_save(
         # Determine output directory
         if output_dir is None:
             output_dir = input_path.parent
+        else:
+            output_dir.mkdir(parents=True, exist_ok=True)
         
         output_path = output_dir / output_filename
     
