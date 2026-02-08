@@ -926,98 +926,54 @@ mypy src/
 
 ## 📈 Results
 
-### Completed Subjects
+### Classification Performance (25 Subjects)
 
-**✅ All 25 subjects processed** (sub-001 through sub-025)
+| Metric             | Overall | Rest   | Elbow  | Hand   |
+|--------------------|---------|--------|--------|--------|
+| **Mean Accuracy**  | 59.21%  | 72.74% | 56.44% | 48.44% |
+| **Std Dev**        | 9.63%   | 10.90% | 13.06% | 13.44% |
+| **Range**          | 39.51-79.01% | 51.85-96.30% | 40.74-81.48% | 22.22-74.07% |
+| **Chance Level**   | 33.33%  | 33.33% | 33.33% | 33.33% |
 
-Results are available in:
-- `reports/metrics/sub-XXX_lenet_results.json` - Detailed metrics for each subject
-- `reports/figures/sub-XXX_lenet_*.png` - Visualizations (confusion matrices, training curves)
-- `models/sub-XXX_lenet_*.pth` - Trained model weights
+**Statistical Significance:**
+- **ANOVA:** F(2,72) = 24.47, p < 0.001, η² = 0.405 (large effect)
+- **Pairwise t-tests (FDR-corrected):**
+  - Rest vs Elbow: p < 0.001, d = 1.13 ✓✓✓
+  - Rest vs Hand: p < 0.001, d = 1.98 ✓✓✓
+  - Elbow vs Hand: p = 0.012, d = 0.54 ✓✓
 
-### Hyperparameter Tuning Results
+All three conditions are statistically distinguishable. Rest state shows significantly higher classification accuracy than both motor imagery tasks, with strong discriminative EEG patterns for same-limb movements.
 
-**✅ Bayesian Optimization with Optuna** - 5 tunable parameters optimized per subject
+### Training Configuration
 
-#### Sub-012 Baseline (50 Trials)
-- **Best Trial:** #36
-- **Best Validation F1:** **76.88%** (baseline: 51.47%)
-- **Improvement:** +25.41 percentage points
-- **Optimized Hyperparameters:**
-  - Learning Rate: 0.00205
-  - Dropout: 0.405
-  - Batch Size: 32
-  - Early Stopping Patience: 99
-  - Early Stopping Min Delta: 4.55e-05
-- **Inference:** Aggressive early stopping (min_delta=4.55e-05) + high patience (99) + low dropout (0.405) enables fine-grained convergence without overfitting
+**Baseline Hyperparameters:**
+- Epochs: 50 | Batch size: 64 | Learning rate: 0.01 | Dropout: 0.35 | Early stopping patience: 50
 
-**Tuning Configuration:**
-- Sampler: Tree-structured Parzen Estimator (TPE)
-- Pruner: Median pruner (stops unpromising trials early)
-- Storage: SQLite persistent (automatic crash recovery)
-- Command: `python -m mi3_eeg.run_all_subjects --tune --tune-subjects sub-012 --n-trials 50 --epochs 100`
+**Optuna Tuning:**
+Bayesian optimization (TPE sampler) tuned 5 parameters per subject: learning rate, dropout, batch size, early stopping patience, and min delta. Best configurations saved to `models/Hyperparameters/best_configs/`.
 
-See [Hyperparameter Tuning Guide](HYPERPARAMETER_TUNING.md) for full documentation.
-
-### Training Results (25 Subjects)
-
-#### Subject-Specific Training Performance
-- **Mean Overall Accuracy:** 59.21% ± 9.63%
-- **Range:** 39.51% - 79.01%
-- **Median:** 59.26%
-- **95% CI:** ±3.97%
-- **Per-Class Performance:**
-  - Rest: 72.74% ± 10.90% (best, 95% CI: ±4.50%)
-  - Elbow: 56.44% ± 13.06% (95% CI: ±5.39%)
-  - Hand: 48.44% ± 13.44% (95% CI: ±5.55%)
-
-#### Statistical Significance
-- **One-Way ANOVA:** F(2,72) = 24.47, **p < 0.001** ✓✓✓
-  - Highly significant difference between classes
-  - Effect size: η² = 0.405 (large effect)
-- **Pairwise Comparisons (FDR-corrected):**
-  - Rest vs Elbow: **p < 0.001**, d = 1.13 (very large effect) ✓✓✓
-  - Rest vs Hand: **p < 0.001**, d = 1.98 (very large effect) ✓✓✓
-  - Elbow vs Hand: **p = 0.012**, d = 0.54 (moderate effect) ✓✓
-
-**Interpretation:** Rest condition is significantly easier to classify than both motor imagery tasks. All three conditions are statistically distinguishable from each other (p < 0.05, FDR-corrected). The large effect sizes indicate strong discriminative patterns in the EEG data for same-limb motor imagery tasks.
+**Final Training:**
+- 100 epochs with Optuna-tuned hyperparameters (where available) or baseline defaults
+- Example tuned config (sub-001): lr=0.002538, dropout=0.525, batch=32, patience=95
+- Validation F1 improvement: +25.4% (sub-012, 50 trials)
 
 ### Time-Frequency Analysis
 
-- **Frequency Range:** 4-40 Hz (37 frequencies)
-- **Time Window:** 0-4 seconds (800 timepoints @ 200Hz)
-- **ERD/ERS Baseline:** Rest condition
-- **Key Findings:**
-  - Clear mu rhythm desynchronization (8-13 Hz) during motor imagery
-  - Beta band (13-30 Hz) modulation over motor cortex
-  - Topographical localization consistent with contralateral motor areas
+**Frequency Range:** 4-40 Hz | **Time Window:** 0-4s (800 timepoints @ 200Hz)
 
-### Model Performance
+**Key Findings:**
+- Mu rhythm desynchronization (8-13 Hz) during motor imagery
+- Beta band (13-30 Hz) modulation over motor cortex
+- Topographical localization consistent with contralateral motor areas
 
-| Model              | Accuracy | Rest   | Elbow  | Hand   | Notes              |
-|--------------------|----------|--------|--------|--------|---------------------|
-| LENet (per-subject)| 59.21%   | 72.74% | 56.44% | 48.44% | 25 subjects        |
-| Chance Level       | 33.33%   | 33.33% | 33.33% | 33.33% | Random baseline    |
-| Best Subject       | 79.01%   | 96.30% | 81.48% | 74.07% | Sub with highest acc|
-| Worst Subject      | 39.51%   | 51.85% | 40.74% | 22.22% | Sub with lowest acc |
+---
 
-**Default Training Configuration:**
-- Epochs: 50
-- Batch size: 64
-- Learning rate: 0.01
-- Dropout: 0.35
-- Early stopping patience: 50
-- Device: CUDA (GPU acceleration)
+**Output Files:**
+- Metrics: `reports/metrics/sub-XXX_lenet_results.json`
+- Figures: `reports/figures/sub-XXX_lenet_*.png`
+- Models: `models/sub-XXX_lenet_*.pth`
 
-**Hyperparameter Tuning:**
-Optuna Bayesian optimization tuned 5 parameters per subject: learning rate, dropout, batch size, early stopping patience, and early stopping min delta. Best configurations saved to `models/Hyperparameters/best_configs/`.
-
-**Final Training Configuration:**
-- Epochs: 100 (not tuned)
-- Hyperparameters: Loaded from Optuna-tuned configs where available, defaults otherwise
-- Example tuned config (sub-001): lr=0.002538, dropout=0.525, batch=32, patience=95, min_delta=0.000023
-
-*Results vary based on random initialization, data splits, and subject-specific characteristics.*
+*See [HYPERPARAMETER_TUNING.md](HYPERPARAMETER_TUNING.md) for detailed tuning documentation.*
 
 <details>
 <summary><h2>🔧 Configuration</h2></summary>
