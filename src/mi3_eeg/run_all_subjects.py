@@ -1,5 +1,6 @@
 """Run training on all subjects in the derivatives folder."""
 
+import argparse
 import subprocess
 import sys
 
@@ -7,12 +8,18 @@ from mi3_eeg.config import Paths, TrainingConfig
 from mi3_eeg.logger import logger
 from mi3_eeg.metrics_aggregator import generate_metrics_report
 
-def main():
+def main(epochs: int | None = None, device: str | None = None):
     """Run training on all .mat files in derivatives folder."""
     paths = Paths.from_here()
     training_config = TrainingConfig()
     derivatives_path = paths.dataset_derivatives
     metrics_path = paths.reports_metrics
+    
+    # Override config with CLI arguments if provided
+    if epochs is not None:
+        training_config.epochs = epochs
+    if device is not None:
+        training_config.device = device
     
     # Find all .mat files (both raw and standardized formats)
     all_files = sorted(derivatives_path.glob("*.mat"))
@@ -65,6 +72,10 @@ def main():
             str(training_config.epochs)
         ]
         
+        # Add device argument if specified
+        if training_config.device:
+            cmd.extend(["--device", training_config.device])
+        
         try:
             result = subprocess.run(cmd, check=True)
             logger.info(f"✓ Successfully completed: {mat_file.name}")
@@ -88,4 +99,20 @@ def main():
         logger.error(f"✗ Failed to generate metrics report: {e}")
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Run training on all subjects in derivatives folder")
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=None,
+        help="Number of training epochs (default: from TrainingConfig)"
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default=None,
+        choices=["cuda", "cpu"],
+        help="Device to use for training (default: from TrainingConfig)"
+    )
+    
+    args = parser.parse_args()
+    main(epochs=args.epochs, device=args.device)
