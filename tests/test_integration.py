@@ -28,11 +28,12 @@ def test_full_pipeline_with_real_data() -> None:
     assert data_bundle.num_classes == 3
     
     # Prepare loaders
-    train_loader, test_loader = prepare_data_loaders(
+    train_loader, val_loader, test_loader = prepare_data_loaders(
         data_bundle, data_config, device="cpu"
     )
     
     assert len(train_loader.dataset) > 0  # type: ignore[arg-type]
+    assert len(val_loader.dataset) > 0  # type: ignore[arg-type]
     assert len(test_loader.dataset) > 0  # type: ignore[arg-type]
     
     # Create model
@@ -51,7 +52,7 @@ def test_full_pipeline_with_real_data() -> None:
         early_stopping_patience=50,  # Don't trigger early stopping
     )
     
-    history = train_model(model, train_loader, test_loader, training_config)
+    history = train_model(model, train_loader, val_loader, training_config)
     
     # Check history
     assert len(history.train_acc) <= 3
@@ -62,6 +63,7 @@ def test_full_pipeline_with_real_data() -> None:
     results = evaluate_model(model, test_loader, device="cpu")
     
     assert 0 <= results.overall_accuracy <= 1
+    assert 0 <= results.overall_f1 <= 1
     assert len(results.class_accuracies) == 3
     assert results.confusion_matrix.shape == (3, 3)
 

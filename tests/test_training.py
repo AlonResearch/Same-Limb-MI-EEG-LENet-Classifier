@@ -94,6 +94,7 @@ def test_training_history_immutable() -> None:
         test_loss=[0.6, 0.4],
         best_epoch=1,
         best_val_acc=0.78,
+        best_val_f1=0.74,
     )
     
     with pytest.raises(AttributeError):
@@ -144,11 +145,13 @@ def test_validate_one_epoch(sample_tensor_data: tuple[torch.Tensor, torch.Tensor
     
     criterion = nn.CrossEntropyLoss()
     
-    loss, accuracy = validate_one_epoch(model, loader, criterion, device="cpu")
+    loss, accuracy, f1 = validate_one_epoch(model, loader, criterion, device="cpu")
     
     assert isinstance(loss, float)
     assert isinstance(accuracy, float)
+    assert isinstance(f1, float)
     assert 0 <= accuracy <= 1
+    assert 0 <= f1 <= 1
     assert loss >= 0
 
 
@@ -157,16 +160,19 @@ def test_train_model_basic(sample_eeg_data: tuple[np.ndarray, np.ndarray]) -> No
     data, labels = sample_eeg_data
     
     # Split data manually
-    split = int(len(data) * 0.8)
-    train_data, test_data = data[:split], data[split:]
-    train_labels, test_labels = labels[:split], labels[split:]
+    val_split = int(len(data) * 0.1)
+    test_split = int(len(data) * 0.1)
+    val_data, test_data = data[:val_split], data[val_split:val_split + test_split]
+    train_data = data[val_split + test_split:]
+    val_labels, test_labels = labels[:val_split], labels[val_split:val_split + test_split]
+    train_labels = labels[val_split + test_split:]
     
     # Create loaders
     train_loader = create_data_loader(
         train_data, train_labels, batch_size=4, device="cpu"
     )
-    test_loader = create_data_loader(
-        test_data, test_labels, batch_size=4, device="cpu"
+    val_loader = create_data_loader(
+        val_data, val_labels, batch_size=4, device="cpu"
     )
     
     # Create model and config
@@ -180,7 +186,7 @@ def test_train_model_basic(sample_eeg_data: tuple[np.ndarray, np.ndarray]) -> No
     )
     
     # Train
-    history = train_model(model, train_loader, test_loader, config)
+    history = train_model(model, train_loader, val_loader, config)
     
     # Check history
     assert isinstance(history, TrainingHistory)
@@ -199,19 +205,22 @@ def test_train_model_saves_best(
     """Test that training saves best model weights."""
     data, labels = sample_eeg_data
     
-    split = int(len(data) * 0.8)
-    train_data, test_data = data[:split], data[split:]
-    train_labels, test_labels = labels[:split], labels[split:]
+    val_split = int(len(data) * 0.1)
+    test_split = int(len(data) * 0.1)
+    val_data, test_data = data[:val_split], data[val_split:val_split + test_split]
+    train_data = data[val_split + test_split:]
+    val_labels, test_labels = labels[:val_split], labels[val_split:val_split + test_split]
+    train_labels = labels[val_split + test_split:]
     
     train_loader = create_data_loader(train_data, train_labels, batch_size=4, device="cpu")
-    test_loader = create_data_loader(test_data, test_labels, batch_size=4, device="cpu")
+    val_loader = create_data_loader(val_data, val_labels, batch_size=4, device="cpu")
     
     model = LENet(classes_num=3, channel_count=62, drop_out=0.5)
     config = TrainingConfig(epochs=3, batch_size=4, device="cpu")
     
     save_path = tmp_path / "best_model.pth"
     
-    history = train_model(model, train_loader, test_loader, config, save_path=save_path)
+    history = train_model(model, train_loader, val_loader, config, save_path=save_path)
     
     # Check that model was saved
     assert save_path.exists()
@@ -226,12 +235,15 @@ def test_train_model_early_stopping(sample_eeg_data: tuple[np.ndarray, np.ndarra
     """Test that early stopping works correctly."""
     data, labels = sample_eeg_data
     
-    split = int(len(data) * 0.8)
-    train_data, test_data = data[:split], data[split:]
-    train_labels, test_labels = labels[:split], labels[split:]
+    val_split = int(len(data) * 0.1)
+    test_split = int(len(data) * 0.1)
+    val_data, test_data = data[:val_split], data[val_split:val_split + test_split]
+    train_data = data[val_split + test_split:]
+    val_labels, test_labels = labels[:val_split], labels[val_split:val_split + test_split]
+    train_labels = labels[val_split + test_split:]
     
     train_loader = create_data_loader(train_data, train_labels, batch_size=4, device="cpu")
-    test_loader = create_data_loader(test_data, test_labels, batch_size=4, device="cpu")
+    val_loader = create_data_loader(val_data, val_labels, batch_size=4, device="cpu")
     
     model = LENet(classes_num=3, channel_count=62, drop_out=0.5)
     config = TrainingConfig(
@@ -242,7 +254,7 @@ def test_train_model_early_stopping(sample_eeg_data: tuple[np.ndarray, np.ndarra
         early_stopping_min_delta=0.5,  # Very high threshold
     )
     
-    history = train_model(model, train_loader, test_loader, config)
+    history = train_model(model, train_loader, val_loader, config)
     
     # Should stop before reaching 100 epochs
     assert len(history.train_acc) < 100
@@ -252,39 +264,45 @@ def test_quick_train(sample_eeg_data: tuple[np.ndarray, np.ndarray]) -> None:
     """Test quick_train convenience function."""
     data, labels = sample_eeg_data
     
-    split = int(len(data) * 0.8)
-    train_data, test_data = data[:split], data[split:]
-    train_labels, test_labels = labels[:split], labels[split:]
+    val_split = int(len(data) * 0.1)
+    test_split = int(len(data) * 0.1)
+    val_data, test_data = data[:val_split], data[val_split:val_split + test_split]
+    train_data = data[val_split + test_split:]
+    val_labels, test_labels = labels[:val_split], labels[val_split:val_split + test_split]
+    train_labels = labels[val_split + test_split:]
     
     model = LENet(classes_num=3, channel_count=62, drop_out=0.5)
     
-    train_acc, test_acc = quick_train(
+    train_acc, val_acc = quick_train(
         model,
         train_data,
         train_labels,
-        test_data,
-        test_labels,
+        val_data,
+        val_labels,
         epochs=3,
         batch_size=4,
         device="cpu",
     )
     
     assert isinstance(train_acc, float)
-    assert isinstance(test_acc, float)
+    assert isinstance(val_acc, float)
     assert 0 <= train_acc <= 1
-    assert 0 <= test_acc <= 1
+    assert 0 <= val_acc <= 1
 
 
 def test_training_improves_accuracy(sample_eeg_data: tuple[np.ndarray, np.ndarray]) -> None:
     """Test that training actually improves accuracy."""
     data, labels = sample_eeg_data
     
-    split = int(len(data) * 0.8)
-    train_data, test_data = data[:split], data[split:]
-    train_labels, test_labels = labels[:split], labels[split:]
+    val_split = int(len(data) * 0.1)
+    test_split = int(len(data) * 0.1)
+    val_data, test_data = data[:val_split], data[val_split:val_split + test_split]
+    train_data = data[val_split + test_split:]
+    val_labels, test_labels = labels[:val_split], labels[val_split:val_split + test_split]
+    train_labels = labels[val_split + test_split:]
     
     train_loader = create_data_loader(train_data, train_labels, batch_size=4, device="cpu")
-    test_loader = create_data_loader(test_data, test_labels, batch_size=4, device="cpu")
+    val_loader = create_data_loader(val_data, val_labels, batch_size=4, device="cpu")
     
     model = LENet(classes_num=3, channel_count=62, drop_out=0.5)
     config = TrainingConfig(
@@ -295,7 +313,7 @@ def test_training_improves_accuracy(sample_eeg_data: tuple[np.ndarray, np.ndarra
         early_stopping_patience=50,
     )
     
-    history = train_model(model, train_loader, test_loader, config)
+    history = train_model(model, train_loader, val_loader, config)
     
     # Training accuracy should generally improve
     # (at least final should be better than or equal to first)
@@ -308,17 +326,20 @@ def test_model_in_eval_mode_after_training(
     """Test that model is in eval mode after training."""
     data, labels = sample_eeg_data
     
-    split = int(len(data) * 0.8)
-    train_data, test_data = data[:split], data[split:]
-    train_labels, test_labels = labels[:split], labels[split:]
+    val_split = int(len(data) * 0.1)
+    test_split = int(len(data) * 0.1)
+    val_data, test_data = data[:val_split], data[val_split:val_split + test_split]
+    train_data = data[val_split + test_split:]
+    val_labels, test_labels = labels[:val_split], labels[val_split:val_split + test_split]
+    train_labels = labels[val_split + test_split:]
     
     train_loader = create_data_loader(train_data, train_labels, batch_size=4, device="cpu")
-    test_loader = create_data_loader(test_data, test_labels, batch_size=4, device="cpu")
+    val_loader = create_data_loader(val_data, val_labels, batch_size=4, device="cpu")
     
     model = LENet(classes_num=3, channel_count=62, drop_out=0.5)
     config = TrainingConfig(epochs=2, batch_size=4, device="cpu")
     
-    _ = train_model(model, train_loader, test_loader, config)
+    _ = train_model(model, train_loader, val_loader, config)
     
     # Model should be in training mode after train_model
     # (because best state is restored which keeps training mode)

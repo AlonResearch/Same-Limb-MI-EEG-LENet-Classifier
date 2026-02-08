@@ -27,7 +27,6 @@ class TestFormattedDataLoading:
         """Test loading a formatted .mat file."""
         data_bundle = load_mat_from_derivatives(
             mat_path=formatted_data_path,
-            reduce_rest_ratio=1.0,
             expected_sampling_rate=200,
             validate_timepoints=True,
         )
@@ -40,7 +39,6 @@ class TestFormattedDataLoading:
         """Test that DataBundle has correct attributes."""
         data_bundle = load_mat_from_derivatives(
             mat_path=formatted_data_path,
-            reduce_rest_ratio=1.0,
             expected_sampling_rate=200,
             validate_timepoints=True,
         )
@@ -68,7 +66,6 @@ class TestFormattedDataLoading:
         """Test that class distribution is balanced (300 each)."""
         data_bundle = load_mat_from_derivatives(
             mat_path=formatted_data_path,
-            reduce_rest_ratio=1.0,
             expected_sampling_rate=200,
             validate_timepoints=True,
         )
@@ -81,7 +78,6 @@ class TestFormattedDataLoading:
         """Test creating a PyTorch DataLoader from formatted data."""
         data_bundle = load_mat_from_derivatives(
             mat_path=formatted_data_path,
-            reduce_rest_ratio=1.0,
             expected_sampling_rate=200,
             validate_timepoints=True,
         )
@@ -101,7 +97,6 @@ class TestFormattedDataLoading:
         """Test that dataloader produces batches with correct shapes."""
         data_bundle = load_mat_from_derivatives(
             mat_path=formatted_data_path,
-            reduce_rest_ratio=1.0,
             expected_sampling_rate=200,
             validate_timepoints=True,
         )
@@ -128,7 +123,6 @@ class TestFormattedDataLoading:
         """Test that dataloader batches contain all three label types."""
         data_bundle = load_mat_from_derivatives(
             mat_path=formatted_data_path,
-            reduce_rest_ratio=1.0,
             expected_sampling_rate=200,
             validate_timepoints=True,
         )
@@ -158,7 +152,6 @@ class TestFormattedDataLoading:
         """Test that sampling rate is correctly identified as 200Hz."""
         data_bundle = load_mat_from_derivatives(
             mat_path=formatted_data_path,
-            reduce_rest_ratio=1.0,
             expected_sampling_rate=200,
             validate_timepoints=True,
         )
@@ -172,7 +165,6 @@ class TestFormattedDataLoading:
         # Should not raise error for correct sampling rate
         data_bundle = load_mat_from_derivatives(
             mat_path=formatted_data_path,
-            reduce_rest_ratio=1.0,
             expected_sampling_rate=200,
             validate_timepoints=True,
         )

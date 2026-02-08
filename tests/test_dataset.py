@@ -79,8 +79,6 @@ def test_load_mat_from_derivatives(temp_mat_file: Path) -> None:
     """Test loading .mat file."""
     bundle = load_mat_from_derivatives(
         mat_path=temp_mat_file,
-        reduce_rest_ratio=1.0,
-        random_seed=42,
     )
     
     assert isinstance(bundle, EEGDataBundle)
@@ -174,15 +172,16 @@ def test_prepare_data_loaders(sample_eeg_data: tuple[np.ndarray, np.ndarray]) ->
         class_distribution={"Rest": 10, "Elbow": 10, "Hand": 10},
     )
     
-    config = DataConfig(test_size=0.2, random_seed=42)
+    config = DataConfig(val_size=0.1, test_size=0.1, random_seed=42)
     
-    train_loader, test_loader = prepare_data_loaders(
+    train_loader, val_loader, test_loader = prepare_data_loaders(
         bundle, config, device="cpu"
     )
     
-    # Check sizes (80/20 split of 30 samples)
+    # Check sizes (30 samples -> 3 val, 3 test, 24 train)
     assert len(train_loader.dataset) == 24  # type: ignore[arg-type]
-    assert len(test_loader.dataset) == 6  # type: ignore[arg-type]
+    assert len(val_loader.dataset) == 3  # type: ignore[arg-type]
+    assert len(test_loader.dataset) == 3  # type: ignore[arg-type]
 
 
 def test_load_dataset_from_config_default() -> None:
@@ -222,11 +221,11 @@ def test_load_dataset_with_custom_config(temp_mat_file: Path, mock_paths: Path) 
     dest_file = custom_paths.dataset_derivatives / "test_eeg.mat"
     shutil.copy(temp_mat_file, dest_file)
     
-    config = DataConfig(mat_filename="test_eeg.mat", reduce_rest_ratio=0.5)
+    config = DataConfig(mat_filename="test_eeg.mat")
     
     bundle = load_dataset_from_config(config=config, paths=custom_paths)
     
     assert isinstance(bundle, EEGDataBundle)
-    # Should have reduced Rest samples
+    # Check that all 30 samples are present (no downsampling)
     total_samples = sum(bundle.class_distribution.values())
-    assert total_samples < 30  # Less than original due to Rest reduction
+    assert total_samples == 30

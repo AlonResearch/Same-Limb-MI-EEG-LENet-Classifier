@@ -154,13 +154,15 @@ def test_validation_on_cuda(sample_eeg_data: tuple[np.ndarray, np.ndarray]) -> N
     criterion = torch.nn.CrossEntropyLoss()
     
     # Validate on CUDA
-    loss, accuracy = validate_one_epoch(model, loader, criterion, device="cuda")
+    loss, accuracy, f1 = validate_one_epoch(model, loader, criterion, device="cuda")
     
     assert isinstance(loss, float), "Loss should be a float"
     assert isinstance(accuracy, float), "Accuracy should be a float"
+    assert isinstance(f1, float), "F1 should be a float"
     assert 0 <= accuracy <= 1, "Accuracy should be between 0 and 1"
+    assert 0 <= f1 <= 1, "F1 should be between 0 and 1"
     
-    print(f"\n[OK] Validation on CUDA working (loss: {loss:.4f}, acc: {accuracy:.2%})")
+    print(f"\n[OK] Validation on CUDA working (loss: {loss:.4f}, acc: {accuracy:.2%}, f1: {f1:.2%})")
 
 
 @skip_if_no_cuda
