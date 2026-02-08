@@ -15,13 +15,25 @@ def main(
 ):
     """Run training on all .mat files in derivatives folder."""
     paths = Paths.from_here()
-    training_config = TrainingConfig()
     derivatives_path = paths.dataset_derivatives
     metrics_path = paths.reports_metrics
     
-    # Use CLI arguments if provided, otherwise use config defaults
-    epochs_to_use = epochs if epochs is not None else training_config.epochs
-    device_to_use = device if device is not None else training_config.device
+    # Create training config with overridden values if provided
+    training_config = TrainingConfig()
+    if epochs is not None:
+        # Create new config with custom epochs (frozen dataclass pattern)
+        training_config = TrainingConfig(
+            epochs=epochs,
+            batch_size=training_config.batch_size,
+            learning_rate=training_config.learning_rate,
+            dropout=training_config.dropout,
+            early_stopping_patience=training_config.early_stopping_patience,
+            early_stopping_min_delta=training_config.early_stopping_min_delta,
+            device=device if device is not None else training_config.device,
+        )
+    elif device is not None:
+        # Create new config with custom device only
+        training_config = TrainingConfig(device=device)
     
     # Find all .mat files (both raw and standardized formats)
     all_files = sorted(derivatives_path.glob("*.mat"))
@@ -57,7 +69,7 @@ def main(
     for f in mat_files:
         logger.info(f"  - {f.name}")
     
-    logger.info(f"\nStarting training runs with {epochs_to_use} epochs each ({len(mat_files)} total)...")
+    logger.info(f"\nStarting training runs with {training_config.epochs} epochs each ({len(mat_files)} total)...")
     
     # Run training on each file
     for i, mat_file in enumerate(mat_files, 1):
@@ -70,18 +82,17 @@ def main(
             "mi3_eeg.main",
             "--subject-file",
             mat_file.name,
+            "--epochs",
+            str(training_config.epochs),
         ]
         
-        # Add optional arguments if specified
+        # Add device argument
+        if training_config.device:
+            cmd.extend(["--device", training_config.device])
+        
+        # Add models argument if specified
         if models:
             cmd.extend(["--models"] + models)
-        
-        # Always pass epochs (either from CLI or config default)
-        cmd.extend(["--epochs", str(epochs_to_use)])
-        
-        # Always pass device if specified (either from CLI or config default)
-        if device_to_use:
-            cmd.extend(["--device", device_to_use])
         
         try:
             result = subprocess.run(cmd, check=True)
