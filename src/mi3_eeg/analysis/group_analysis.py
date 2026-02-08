@@ -69,17 +69,6 @@ def _get_subject_mat_files(paths: Paths, subjects_subset: list[str] | None = Non
     """Get list of subject .mat files for analysis."""
     mat_files = sorted(paths.dataset_derivatives.glob("*_eeg200hz.mat"))
 
-    def _is_git_lfs_pointer(path: Path) -> bool:
-        try:
-            with open(path, "r", encoding="utf-8", errors="ignore") as f:
-                first_line = f.readline().strip()
-            return first_line.startswith("version https://git-lfs.github.com/spec")
-        except OSError:
-            return False
-
-    # Filter out git-lfs pointer files (not actual .mat content)
-    mat_files = [mf for mf in mat_files if not _is_git_lfs_pointer(mf)]
-
     if subjects_subset is None:
         return mat_files
 

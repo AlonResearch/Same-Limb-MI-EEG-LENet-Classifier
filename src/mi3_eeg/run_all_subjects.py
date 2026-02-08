@@ -18,7 +18,7 @@ if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
         pass  # Fallback if reconfigure not available
 
 from mi3_eeg.config import Paths, TrainingConfig
-from mi3_eeg.logger import logger
+from mi3_eeg.logger import logger, setup_logger
 from mi3_eeg.metrics_aggregator import generate_metrics_report
 from mi3_eeg.tuning import load_hyperparameters, tune_subject
 
@@ -148,6 +148,12 @@ def main(
     paths = Paths.from_here()
     derivatives_path = paths.dataset_derivatives
     metrics_path = paths.reports_metrics
+    
+    # Setup file logging to reports/logs
+    log_dir = paths.reports_logs
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / "run_all_subjects.log"
+    setup_logger(log_file=log_file)
     
     # Create training config with overridden values if provided
     training_config = TrainingConfig()
