@@ -27,7 +27,7 @@ def compute_morlet_tfr(
     data: np.ndarray,
     sfreq: float,
     freqs: np.ndarray | None = None,
-    n_cycles: float | np.ndarray = 7.0,
+    n_cycles: float | np.ndarray = "adaptive",
     use_fft: bool = True,
     zero_mean: bool = True,
     decim: int | None = None,
@@ -39,7 +39,10 @@ def compute_morlet_tfr(
         data: EEG data, shape (n_epochs, n_channels, n_times).
         sfreq: Sampling frequency in Hz.
         freqs: Frequencies of interest. If None, uses 4-40 Hz in 1 Hz steps.
-        n_cycles: Number of cycles for the Morlet wavelet.
+        n_cycles: Number of cycles for the Morlet wavelet. Can be:
+            - "adaptive" (default): n_cycles = 3 + freq/10 (scales with frequency)
+            - float: fixed number of cycles
+            - array: per-frequency cycles (shape must match freqs)
         use_fft: Whether to use FFT-based convolution (faster).
         zero_mean: Whether to zero-mean the signal before analysis.
     
@@ -48,14 +51,36 @@ def compute_morlet_tfr(
             - power: shape (n_epochs, n_channels, n_freqs, n_times)
             - itc: Inter-trial coherence, shape (n_channels, n_freqs, n_times)
             - freqs: Frequency vector
+    
+    Notes:
+        Adaptive n_cycles is preferred for short signals (e.g., 800 samples at 200 Hz = 4 seconds).
+        It ensures wavelets are appropriately sized across frequencies:
+        - Low frequencies (4 Hz): ~3.4 cycles, wavelet ~850 ms
+        - High frequencies (40 Hz): ~7 cycles, wavelet ~175 ms
     """
     if freqs is None:
         freqs = np.arange(4, 41, 1.0)  # 4-40 Hz in 1 Hz steps
     
-    logger.info(f"Computing TFR for {data.shape[0]} epochs, {data.shape[1]} channels")
+    # Convert frequency array to ensure it's numpy
+    freqs = np.asarray(freqs)
+    
+    # Handle adaptive n_cycles computation
+    if isinstance(n_cycles, str) and n_cycles == "adaptive":
+        # Adaptive formula: n_cycles = 3 + freq/10
+        # This gives ~3.4 cycles at 4 Hz and ~7 cycles at 40 Hz
+        # Keeps wavelets appropriately sized for short signals
+        n_cycles = 3.0 + freqs / 10.0
+        logger.info(f"Using adaptive n_cycles: 3 + freq/10")
+        logger.info(f"  At {freqs[0]:.1f} Hz: {n_cycles[0]:.2f} cycles (~{1000/freqs[0] * n_cycles[0]:.0f} ms)")
+        logger.info(f"  At {freqs[-1]:.1f} Hz: {n_cycles[-1]:.2f} cycles (~{1000/freqs[-1] * n_cycles[-1]:.0f} ms)")
+    
+    logger.info(f"Computing TFR for {data.shape[0]} epochs, {data.shape[1]} channels, {data.shape[2]} timepoints")
     logger.info(f"Frequency range: {freqs[0]:.1f}-{freqs[-1]:.1f} Hz ({len(freqs)} freqs)")
+    logger.info(f"Signal duration: {data.shape[2] / sfreq:.2f} seconds ({data.shape[2]} samples at {sfreq:.0f} Hz)")
     
     # Use MNE's tfr_array_morlet for standardized computation
+    # Note: Use n_jobs=1 (serial) to avoid memory issues with large parallel arrays
+    # TFR computation is already efficient, parallelization adds overhead without gain
     kwargs = {
         'data': data,
         'sfreq': sfreq,
@@ -64,12 +89,13 @@ def compute_morlet_tfr(
         'use_fft': use_fft,
         'zero_mean': zero_mean,
         'output': 'power',
-        'n_jobs': -1,  # Use all available cores
+        'n_jobs': 1,  # Serial computation to avoid memory explosion with large TFR arrays
         'verbose': 'WARNING'
     }
     if decim is not None:
         kwargs['decim'] = decim
     
+    logger.info("Computing TFR (this may take 1-2 minutes per subject)...")
     power = mne.time_frequency.tfr_array_morlet(**kwargs)
 
     itc = None
@@ -84,7 +110,7 @@ def compute_morlet_tfr(
             zero_mean=zero_mean,
             decim=decim,
             output='complex',
-            n_jobs=-1,
+            n_jobs=1,  # Serial computation to avoid memory issues
             verbose='WARNING'
         )
         itc = np.abs(np.mean(complex_tfr / np.abs(complex_tfr), axis=0))

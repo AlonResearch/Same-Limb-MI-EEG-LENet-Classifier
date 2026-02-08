@@ -150,13 +150,14 @@ class GroupAnalysisConfig:
     Attributes:
         sampling_rate: EEG sampling rate in Hz.
         tfr_freqs: Tuple of (f_min, f_max, f_step) for time-frequency decomposition.
+            Note: f_min should be ≥ 4 Hz to avoid wavelets longer than signal windows (800 samples @ 200 Hz = 4 sec).
         electrodes_of_interest: List of electrode names for topographical analysis.
         baseline_method: Method for baseline correction ('ratio' or 'percent').
         use_cache: Whether to cache computed TFR data.
     """
 
     sampling_rate: int = 200
-    tfr_freqs: tuple[int, int, int] = (1, 50, 1)
+    tfr_freqs: tuple[int, int, int] = (4, 40, 1)
     electrodes_of_interest: tuple[str, ...] = (
         "Cz", "C3", "C4", "CPz", "CP3", "CP4",
         "Pz", "P3", "P4", "POz", "PO3", "PO4",
