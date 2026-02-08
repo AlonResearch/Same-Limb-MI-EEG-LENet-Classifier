@@ -84,8 +84,8 @@ class DataConfig:
         num_channels: Number of EEG channels.
         num_classes: Number of motor imagery classes.
         class_names: Tuple of class labels.
-        reduce_rest_ratio: Ratio of Rest samples to keep (1.0 = all).
-        test_size: Proportion of data for testing.
+        val_size: Proportion of data for validation (first split).
+        test_size: Proportion of remaining data for testing (second split).
         random_seed: Random seed for reproducibility.
         expected_sampling_rate: Expected sampling rate for validation. If None, no validation.
         validate_timepoints: Whether to validate timepoints against expected_sampling_rate.
@@ -98,8 +98,8 @@ class DataConfig:
     num_channels: int = 62
     num_classes: int = 3
     class_names: tuple[str, ...] = ("Rest", "Elbow", "Hand")
-    reduce_rest_ratio: float = 1
-    test_size: float = 0.2
+    val_size: float = 0.1
+    test_size: float = 0.1
     random_seed: int = 42
     expected_sampling_rate: int | None = None
     validate_timepoints: bool = True
