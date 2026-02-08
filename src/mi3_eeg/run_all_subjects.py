@@ -8,7 +8,11 @@ from mi3_eeg.config import Paths, TrainingConfig
 from mi3_eeg.logger import logger
 from mi3_eeg.metrics_aggregator import generate_metrics_report
 
-def main(epochs: int | None = None, device: str | None = None):
+def main(
+    models: list[str] | None = None,
+    epochs: int | None = None,
+    device: str | None = None,
+):
     """Run training on all .mat files in derivatives folder."""
     paths = Paths.from_here()
     training_config = TrainingConfig()
@@ -55,26 +59,32 @@ def main(epochs: int | None = None, device: str | None = None):
     for f in mat_files:
         logger.info(f"  - {f.name}")
     
-    logger.info(f"\nStarting training runs with {training_config.epochs} epochs each ({len(mat_files)} total)...")
+    # Determine epochs to display (use override or config default)
+    epochs_to_use = epochs if epochs is not None else training_config.epochs
+    logger.info(f"\nStarting training runs with {epochs_to_use} epochs each ({len(mat_files)} total)...")
     
     # Run training on each file
     for i, mat_file in enumerate(mat_files, 1):
         logger.info(f"[{i}/{len(mat_files)}] Processing: {mat_file.name}")
         
-        # Run the training
+        # Build the command with all arguments
         cmd = [
             sys.executable,
             "-m",
             "mi3_eeg.main",
             "--subject-file",
             mat_file.name,
-            "--epochs",
-            str(training_config.epochs)
         ]
         
-        # Add device argument if specified
-        if training_config.device:
-            cmd.extend(["--device", training_config.device])
+        # Add optional arguments if specified
+        if models:
+            cmd.extend(["--models"] + models)
+        
+        if epochs is not None:
+            cmd.extend(["--epochs", str(epochs)])
+        
+        if device:
+            cmd.extend(["--device", device])
         
         try:
             result = subprocess.run(cmd, check=True)
@@ -99,20 +109,33 @@ def main(epochs: int | None = None, device: str | None = None):
         logger.error(f"✗ Failed to generate metrics report: {e}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run training on all subjects in derivatives folder")
+    parser = argparse.ArgumentParser(
+        description="Run training on all subjects in derivatives folder",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    
+    parser.add_argument(
+        "--models",
+        nargs="+",
+        choices=["lenet"],
+        default=None,
+        help="Model type(s) to train (default: lenet)",
+    )
+    
     parser.add_argument(
         "--epochs",
         type=int,
         default=None,
-        help="Number of training epochs (default: from TrainingConfig)"
+        help="Number of training epochs (default: from TrainingConfig)",
     )
+    
     parser.add_argument(
         "--device",
         type=str,
         default=None,
         choices=["cuda", "cpu"],
-        help="Device to use for training (default: from TrainingConfig)"
+        help="Device to use for training (default: auto-detect)",
     )
     
     args = parser.parse_args()
-    main(epochs=args.epochs, device=args.device)
+    main(models=args.models, epochs=args.epochs, device=args.device)
