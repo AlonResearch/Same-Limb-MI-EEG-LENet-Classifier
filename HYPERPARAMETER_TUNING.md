@@ -97,6 +97,40 @@ python -m mi3_eeg.main \
   --epochs 600
 ```
 
+## Crash Recovery
+
+Hyperparameter tuning sessions are **automatically resumable**. Progress is saved to SQLite databases in `models/Hyperparameters/studies/`.
+
+### How It Works
+
+1. **Automatic Saving**: Each completed trial is immediately saved to disk
+2. **Resume on Restart**: Simply re-run the same command - it detects existing progress
+3. **No Data Loss**: All completed trials are preserved, even if interrupted mid-run
+
+### Example
+
+```bash
+# Start tuning with 50 trials
+python -m mi3_eeg.run_all_subjects --tune --tune-subjects sub-014 --n-trials 50
+
+# ... script runs 15 trials, then crashes or gets interrupted ...
+
+# Just run the same command again!
+python -m mi3_eeg.run_all_subjects --tune --tune-subjects sub-014 --n-trials 50
+# Output: "Resuming existing study... Found 15 completed trials, running 35 more"
+```
+
+### Storage Location
+
+```
+models/Hyperparameters/
+├── best_configs/          # Final tuned hyperparameters (JSON)
+└── studies/               # Persistent Optuna databases (SQLite)
+    ├── sub-001_200hz.db
+    ├── sub-014_200hz.db
+    └── ...
+```
+
 ## Configuration Files
 
 ### Storage Structure

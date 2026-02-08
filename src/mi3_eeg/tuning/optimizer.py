@@ -185,19 +185,42 @@ def tune_subject(
     if study_name is None:
         study_name = f"{subject_id}_{sampling_rate}hz"
     
-    logger.info(
-        f"Starting hyperparameter tuning for {subject_id} ({sampling_rate}Hz)\n"
-        f"  Trials: {n_trials}\n"
-        f"  Device: {device}\n"
-        f"  Max epochs per trial: {max_epochs}"
-    )
+    # Setup persistent storage
+    studies_dir = paths.models / "Hyperparameters" / "studies"
+    studies_dir.mkdir(parents=True, exist_ok=True)
+    storage_url = f"sqlite:///{studies_dir}/{study_name}.db"
     
-    # Create Optuna study with TPE sampler and median pruner
+    # Check if study exists
+    try:
+        existing_study = optuna.load_study(
+            study_name=study_name,
+            storage=storage_url,
+        )
+        n_completed = len([t for t in existing_study.trials if t.state == optuna.trial.TrialState.COMPLETE])
+        logger.info(
+            f"Resuming existing study for {subject_id} ({sampling_rate}Hz)\n"
+            f"  Found {n_completed} completed trials\n"
+            f"  Will run {n_trials} additional trials\n"
+            f"  Device: {device}\n"
+            f"  Max epochs per trial: {max_epochs}"
+        )
+    except KeyError:
+        logger.info(
+            f"Starting new hyperparameter tuning for {subject_id} ({sampling_rate}Hz)\n"
+            f"  Trials: {n_trials}\n"
+            f"  Device: {device}\n"
+            f"  Max epochs per trial: {max_epochs}\n"
+            f"  Storage: {storage_url}"
+        )
+    
+    # Create or load Optuna study with persistent SQLite storage
     study = optuna.create_study(
         study_name=study_name,
         direction="maximize",  # Maximize validation F1 score
         sampler=TPESampler(seed=42),
         pruner=MedianPruner(n_startup_trials=5, n_warmup_steps=50),
+        storage=storage_url,
+        load_if_exists=True,  # Resume if study exists
     )
     
     # Define objective function with fixed parameters
@@ -213,10 +236,14 @@ def tune_subject(
     # Run optimization
     study.optimize(objective, n_trials=n_trials, show_progress_bar=True)
     
+    # Count completed trials
+    n_completed = len([t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE])
+    
     # Log best results
     best_trial = study.best_trial
     logger.info(
         f"\nOptimization complete for {subject_id}!\n"
+        f"  Total completed trials: {n_completed}\n"
         f"  Best trial: {best_trial.number}\n"
         f"  Best val_f1: {best_trial.value:.4f}\n"
         f"  Best hyperparameters:\n"

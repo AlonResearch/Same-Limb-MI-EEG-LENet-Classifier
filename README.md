@@ -1117,6 +1117,9 @@ group_analysis.run_group_analysis(
 # Tune hyperparameters for a single subject (recommended first step)
 python -m mi3_eeg.run_all_subjects --tune --tune-subjects sub-001 --n-trials 50
 
+# If interrupted, simply run the same command again - it will resume automatically!
+# Progress is saved in SQLite database (models/Hyperparameters/studies/)
+
 # Train all subjects (sub-001 uses tuned hyperparameters, others use defaults)
 python -m mi3_eeg.run_all_subjects --epochs 600
 
@@ -1128,6 +1131,8 @@ python -m mi3_eeg.tuning.analysis --compare
 **What gets tuned:** learning rate, dropout, batch size, early stopping patience/delta
 
 **Optimization method:** Bayesian optimization with TPE sampler (50 trials ≈ 3-4 hours)
+
+**Crash recovery:** Automatic resume from last completed trial using SQLite storage
 
 **See:** [HYPERPARAMETER_TUNING.md](HYPERPARAMETER_TUNING.md) for complete guide
 
