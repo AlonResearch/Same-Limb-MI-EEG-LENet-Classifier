@@ -2,8 +2,10 @@
 
 import argparse
 import io
+import re
 import subprocess
 import sys
+from pathlib import Path
 
 import scipy.io as scio
 
@@ -19,6 +21,21 @@ from mi3_eeg.config import Paths, TrainingConfig
 from mi3_eeg.logger import logger
 from mi3_eeg.metrics_aggregator import generate_metrics_report
 from mi3_eeg.tuning import load_hyperparameters, tune_subject
+
+
+def extract_subject_id(filename: str) -> str:
+    """Extract the subject ID from a filename.
+
+    Args:
+        filename: Filename or path string.
+
+    Returns:
+        Subject ID if detected (e.g., "sub-001"), otherwise the filename stem.
+    """
+    match = re.search(r"(sub-\d+)", filename)
+    if match:
+        return match.group(1)
+    return Path(filename).stem
 
 
 def validate_mat_file(mat_path) -> tuple[bool, str | None]:
@@ -167,7 +184,7 @@ def main(
     subject_files = {}
     for f in all_files:
         # Extract subject ID (e.g., "sub-001" from "sub-001_eeg200hz.mat" or "sub-001_task-motorimagery_eeg.mat")
-        subject_id = f.name.split('_')[0]
+        subject_id = extract_subject_id(f.name)
         
         # Check if this is a standardized file (contains "eegXXXhz" pattern)
         is_standardized = 'eeg200hz' in f.name.lower() or 'eeg90hz' in f.name.lower()
@@ -252,7 +269,7 @@ def main(
         logger.info(f"[{i}/{len(valid_files)}] Processing: {mat_file.name}")
         
         # Extract subject info
-        subject_id = mat_file.name.split("_")[0]
+        subject_id = extract_subject_id(mat_file.name)
         sampling_rate = 200  # default
         if "200hz" in mat_file.name.lower():
             sampling_rate = 200
