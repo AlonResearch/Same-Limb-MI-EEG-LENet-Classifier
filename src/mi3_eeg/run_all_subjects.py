@@ -9,6 +9,7 @@ import scipy.io as scio
 from mi3_eeg.config import Paths, TrainingConfig
 from mi3_eeg.logger import logger
 from mi3_eeg.metrics_aggregator import generate_metrics_report
+from mi3_eeg.tuning import load_hyperparameters, tune_subject
 
 
 def validate_mat_file(mat_path) -> tuple[bool, str | None]:
@@ -103,8 +104,20 @@ def main(
     models: list[str] | None = None,
     epochs: int | None = None,
     device: str | None = None,
+    tune: bool = False,
+    n_trials: int = 50,
+    tune_subjects: list[str] | None = None,
 ):
-    """Run training on all .mat files in derivatives folder."""
+    """Run training on all .mat files in derivatives folder.
+    
+    Args:
+        models: List of model types to train.
+        epochs: Number of training epochs.
+        device: Device to use for training.
+        tune: If True, run hyperparameter tuning before training.
+        n_trials: Number of Optuna trials for hyperparameter tuning.
+        tune_subjects: List of subject IDs to tune (e.g., ["sub-001"]). If None, no tuning.
+    """
     paths = Paths.from_here()
     derivatives_path = paths.dataset_derivatives
     metrics_path = paths.reports_metrics
@@ -175,11 +188,66 @@ def main(
         logger.error("No valid files to process. Exiting.")
         return
     
+    # === HYPERPARAMETER TUNING PHASE (Optional) ===
+    if tune and tune_subjects:
+        logger.info(
+            f"\n{'='*80}\n"
+            f"HYPERPARAMETER TUNING PHASE\n"
+            f"{'='*80}\n"
+            f"Subjects to tune: {tune_subjects}\n"
+            f"Trials per subject: {n_trials}\n"
+            f"Device: {device or 'auto'}\n"
+        )
+        
+        # Find the files for subjects to tune
+        for subject_id in tune_subjects:
+            # Find the corresponding file
+            subject_file = None
+            for mat_file in valid_files:
+                if mat_file.name.startswith(subject_id):
+                    subject_file = mat_file.name
+                    break
+            
+            if subject_file is None:
+                logger.warning(f"Subject {subject_id} not found in valid files. Skipping tuning.")
+                continue
+            
+            logger.info(f"\nTuning hyperparameters for {subject_id}...")
+            try:
+                tune_subject(
+                    subject_file=subject_file,
+                    n_trials=n_trials,
+                    device=device or "cuda",
+                    max_epochs=epochs or 600,
+                )
+                logger.info(f"✓ Tuning completed for {subject_id}")
+            except Exception as e:
+                logger.error(f"✗ Tuning failed for {subject_id}: {e}", exc_info=True)
+                logger.info("Continuing with default hyperparameters...")
+        
+        logger.info(
+            f"\n{'='*80}\n"
+            f"HYPERPARAMETER TUNING COMPLETE\n"
+            f"{'='*80}\n"
+        )
+    
+    # === TRAINING PHASE ===
     logger.info(f"\nStarting training runs with {training_config.epochs} epochs each ({len(valid_files)} total)...")
     
     # Run training on each valid file
     for i, mat_file in enumerate(valid_files, 1):
         logger.info(f"[{i}/{len(valid_files)}] Processing: {mat_file.name}")
+        
+        # Extract subject info
+        subject_id = mat_file.name.split("_")[0]
+        sampling_rate = 200  # default
+        if "200hz" in mat_file.name.lower():
+            sampling_rate = 200
+        elif "90hz" in mat_file.name.lower():
+            sampling_rate = 90
+        
+        # Try to load tuned hyperparameters
+        hyperparams = load_hyperparameters(subject_id, sampling_rate)
         
         # Build the command with all arguments
         cmd = [
@@ -199,6 +267,17 @@ def main(
         # Add models argument if specified
         if models:
             cmd.extend(["--models"] + models)
+        
+        # Add tuned hyperparameters if available
+        if hyperparams:
+            cmd.extend(["--learning-rate", str(hyperparams["learning_rate"])])
+            cmd.extend(["--dropout", str(hyperparams["dropout"])])
+            cmd.extend(["--batch-size", str(hyperparams["batch_size"])])
+            cmd.extend(["--early-stopping-patience", str(hyperparams["early_stopping_patience"])])
+            cmd.extend(["--early-stopping-min-delta", str(hyperparams["early_stopping_min_delta"])])
+            logger.info(f"  Using tuned hyperparameters for {subject_id}")
+        else:
+            logger.info(f"  Using default hyperparameters for {subject_id}")
         
         try:
             result = subprocess.run(cmd, check=True)
@@ -257,5 +336,32 @@ if __name__ == "__main__":
         help="Device to use for training (default: auto-detect)",
     )
     
+    parser.add_argument(
+        "--tune",
+        action="store_true",
+        help="Run hyperparameter tuning before training (requires --tune-subjects)",
+    )
+    
+    parser.add_argument(
+        "--n-trials",
+        type=int,
+        default=50,
+        help="Number of Optuna trials for hyperparameter tuning (default: 50)",
+    )
+    
+    parser.add_argument(
+        "--tune-subjects",
+        nargs="+",
+        default=None,
+        help="Subject IDs to tune (e.g., sub-001 sub-002). Use with --tune flag.",
+    )
+    
     args = parser.parse_args()
-    main(models=args.models, epochs=args.epochs, device=args.device)
+    main(
+        models=args.models,
+        epochs=args.epochs,
+        device=args.device,
+        tune=args.tune,
+        n_trials=args.n_trials,
+        tune_subjects=args.tune_subjects,
+    )

@@ -25,12 +25,55 @@ from mi3_eeg.train import train_model
 from mi3_eeg.visualization import create_all_visualizations
 
 
+def _create_training_config_from_args(
+    epochs: int | None = None,
+    learning_rate: float | None = None,
+    dropout: float | None = None,
+    batch_size: int | None = None,
+    early_stopping_patience: int | None = None,
+    early_stopping_min_delta: float | None = None,
+    device: str = "cuda",
+) -> TrainingConfig:
+    """Create TrainingConfig with optional hyperparameter overrides.
+    
+    Args:
+        epochs: Number of training epochs.
+        learning_rate: Learning rate for optimizer.
+        dropout: Dropout probability.
+        batch_size: Batch size for training.
+        early_stopping_patience: Epochs to wait before early stopping.
+        early_stopping_min_delta: Minimum improvement for early stopping.
+        device: Device to use ("cuda" or "cpu").
+    
+    Returns:
+        TrainingConfig with specified or default values.
+    """
+    # Start with defaults
+    default_config = TrainingConfig(device=device)
+    
+    # Override with provided values
+    return TrainingConfig(
+        epochs=epochs if epochs is not None else default_config.epochs,
+        batch_size=batch_size if batch_size is not None else default_config.batch_size,
+        learning_rate=learning_rate if learning_rate is not None else default_config.learning_rate,
+        dropout=dropout if dropout is not None else default_config.dropout,
+        early_stopping_patience=early_stopping_patience if early_stopping_patience is not None else default_config.early_stopping_patience,
+        early_stopping_min_delta=early_stopping_min_delta if early_stopping_min_delta is not None else default_config.early_stopping_min_delta,
+        device=device,
+    )
+
+
 def main(
     model_types: list[str] | None = None,
     epochs: int | None = None,
     device: str | None = None,
     subject_file: str | None = None,
     subject_id: str | None = None,
+    learning_rate: float | None = None,
+    dropout: float | None = None,
+    batch_size: int | None = None,
+    early_stopping_patience: int | None = None,
+    early_stopping_min_delta: float | None = None,
 ) -> None:
     """Run the full ML pipeline.
     
@@ -41,6 +84,11 @@ def main(
         device: Device to use ('cuda' or 'cpu'). If None, auto-detects.
         subject_file: Subject .mat file to use. If None, auto-selects first available subject.
         subject_id: Subject ID. If None, inferred from subject_file.
+        learning_rate: Learning rate for optimizer. If None, uses config default.
+        dropout: Dropout probability. If None, uses config default.
+        batch_size: Batch size for training. If None, uses config default.
+        early_stopping_patience: Epochs to wait before early stopping. If None, uses config default.
+        early_stopping_min_delta: Minimum improvement for early stopping. If None, uses config default.
     """
     # Initialize paths and setup logger with file output FIRST
     paths = Paths.from_here()
@@ -125,9 +173,20 @@ def main(
         f"Class distribution: {data_bundle.class_distribution}"
     )
     
+    # Create training config with hyperparameter overrides
+    training_config = _create_training_config_from_args(
+        epochs=epochs,
+        learning_rate=learning_rate,
+        dropout=dropout,
+        batch_size=batch_size,
+        early_stopping_patience=early_stopping_patience,
+        early_stopping_min_delta=early_stopping_min_delta,
+        device=device,
+    )
+    
     # Prepare data loaders
     train_loader, val_loader, test_loader = prepare_data_loaders(
-        data_bundle, data_config, device=device
+        data_bundle, data_config, batch_size=training_config.batch_size, device=device
     )
     
     # === STAGE 2: Model Training ===
@@ -136,21 +195,8 @@ def main(
     model_config = ModelConfig(
         channel_count=data_bundle.channel_count,
         classes_num=data_bundle.num_classes,
+        drop_out=training_config.dropout,
     )
-    
-    training_config = TrainingConfig(
-        device=device,
-    )
-    if epochs is not None:
-        training_config = TrainingConfig(
-            epochs=epochs,
-            batch_size=training_config.batch_size,
-            learning_rate=training_config.learning_rate,
-            dropout=training_config.dropout,
-            early_stopping_patience=training_config.early_stopping_patience,
-            early_stopping_min_delta=training_config.early_stopping_min_delta,
-            device=device,
-        )
     
     trained_models = {}
     training_histories = {}
@@ -264,6 +310,41 @@ def cli() -> None:
         help="Subject ID (default: inferred from filename)",
     )
     
+    parser.add_argument(
+        "--learning-rate",
+        type=float,
+        default=None,
+        help="Learning rate for optimizer (default: from config)",
+    )
+    
+    parser.add_argument(
+        "--dropout",
+        type=float,
+        default=None,
+        help="Dropout probability (default: from config)",
+    )
+    
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=None,
+        help="Batch size for training (default: from config)",
+    )
+    
+    parser.add_argument(
+        "--early-stopping-patience",
+        type=int,
+        default=None,
+        help="Epochs to wait before early stopping (default: from config)",
+    )
+    
+    parser.add_argument(
+        "--early-stopping-min-delta",
+        type=float,
+        default=None,
+        help="Minimum improvement for early stopping (default: from config)",
+    )
+    
     args = parser.parse_args()
     
     main(
@@ -272,6 +353,11 @@ def cli() -> None:
         device=args.device,
         subject_file=args.subject_file,
         subject_id=args.subject_id,
+        learning_rate=args.learning_rate,
+        dropout=args.dropout,
+        batch_size=args.batch_size,
+        early_stopping_patience=args.early_stopping_patience,
+        early_stopping_min_delta=args.early_stopping_min_delta,
     )
 
 

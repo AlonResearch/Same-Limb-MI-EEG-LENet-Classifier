@@ -452,6 +452,7 @@ def load_dataset_from_config(
 def prepare_data_loaders(
     data_bundle: EEGDataBundle,
     config: DataConfig,
+    batch_size: int = 64,
     device: str = "cuda",
 ) -> tuple[DataLoader, DataLoader, DataLoader]:
     """Split EEGDataBundle and return train/val/test DataLoaders.
@@ -459,6 +460,7 @@ def prepare_data_loaders(
     Args:
         data_bundle: Loaded EEGDataBundle.
         config: DataConfig containing val_size, test_size, and random_seed.
+        batch_size: Batch size for all DataLoaders.
         device: Device for tensors ("cuda" or "cpu").
 
     Returns:
@@ -496,7 +498,7 @@ def prepare_data_loaders(
     train_loader = create_data_loader(
         train_data,
         train_labels,
-        batch_size=64,  # Could be configurable
+        batch_size=batch_size,
         shuffle=True,
         drop_last=False,
         device=device,
@@ -505,7 +507,7 @@ def prepare_data_loaders(
     val_loader = create_data_loader(
         val_data,
         val_labels,
-        batch_size=64,
+        batch_size=batch_size,
         shuffle=False,
         drop_last=False,
         device=device,
@@ -514,7 +516,7 @@ def prepare_data_loaders(
     test_loader = create_data_loader(
         test_data,
         test_labels,
-        batch_size=64,
+        batch_size=batch_size,
         shuffle=False,  # Don't shuffle test data
         drop_last=False,
         device=device,

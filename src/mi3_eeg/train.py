@@ -92,7 +92,7 @@ def train_one_epoch(
     criterion: nn.Module,
     optimizer: optim.Optimizer,
     device: str = "cuda",
-) -> tuple[float, float]:
+) -> tuple[float, float, float]:
     """Train model for one epoch.
     
     Args:
@@ -103,12 +103,14 @@ def train_one_epoch(
         device: Device to use for training.
     
     Returns:
-        Tuple of (average_loss, accuracy).
+        Tuple of (average_loss, accuracy, macro_f1).
     """
     model.train()
     total_loss = 0.0
     correct = 0
     total = 0
+    all_targets = []
+    all_predictions = []
 
     for inputs, targets in train_loader:
         inputs, targets = inputs.to(device), targets.to(device)
@@ -127,11 +129,14 @@ def train_one_epoch(
         _, predicted = outputs.max(1)
         total += targets.size(0)
         correct += predicted.eq(targets).sum().item()
+        all_predictions.extend(predicted.detach().cpu().numpy())
+        all_targets.extend(targets.detach().cpu().numpy())
 
     avg_loss = total_loss / len(train_loader)
     accuracy = correct / total
+    macro_f1 = f1_score(all_targets, all_predictions, average="macro")
 
-    return avg_loss, accuracy
+    return avg_loss, accuracy, macro_f1
 
 
 def validate_one_epoch(
@@ -233,7 +238,7 @@ def train_model(
     # Training loop
     for epoch in range(config.epochs):
         # Train
-        train_loss, train_acc = train_one_epoch(
+        train_loss, train_acc, train_f1 = train_one_epoch(
             model, train_loader, criterion, optimizer, device
         )
         train_acc_history.append(train_acc)
@@ -253,9 +258,8 @@ def train_model(
         if (epoch + 1) % 10 == 0 or epoch == 0:
             logger.info(
                 f"Epoch {epoch + 1}/{config.epochs} | "
-                f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc * 100:.2f}% | "
-                f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc * 100:.2f}%, "
-                f"Val F1: {val_f1 * 100:.2f}%"
+                f"Train Acc: {train_acc * 100:.2f}%, Train F1: {train_f1 * 100:.2f}% | "
+                f"Val Acc: {val_acc * 100:.2f}%, Val F1: {val_f1 * 100:.2f}%"
             )
 
         # Track best model

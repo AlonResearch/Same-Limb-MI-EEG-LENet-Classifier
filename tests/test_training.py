@@ -120,11 +120,13 @@ def test_train_one_epoch(sample_tensor_data: tuple[torch.Tensor, torch.Tensor]) 
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
     
-    loss, accuracy = train_one_epoch(model, loader, criterion, optimizer, device="cpu")
+    loss, accuracy, f1 = train_one_epoch(model, loader, criterion, optimizer, device="cpu")
     
     assert isinstance(loss, float)
     assert isinstance(accuracy, float)
+    assert isinstance(f1, float)
     assert 0 <= accuracy <= 1
+    assert 0 <= f1 <= 1
     assert loss >= 0
 
 

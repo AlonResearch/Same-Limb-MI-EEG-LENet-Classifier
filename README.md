@@ -21,6 +21,7 @@ Motor-imagery EEG trials from the MI3 dataset are classified with the LENet arch
 **Key Features:**
 - ✅ **Batch processing for all subjects** with `run_all_subjects` (batch branch only)
 - ✅ **Auto-conversion** of raw format EEG files to standardized format
+- ✅ **Hyperparameter tuning** with Bayesian optimization (Optuna/TPE)
 - ✅ Modular, testable architecture following best practices
 - ✅ BIDS-compliant dataset structure
 - ✅ Subject-specific and full-cohort training modes
@@ -61,6 +62,7 @@ Motor-imagery EEG trials from the MI3 dataset are classified with the LENet arch
 - [🔧 Configuration](#-configuration) – Key settings
 - [📚 Module Documentation](#-module-documentation) – Core modules and analysis
 - [🚀 Quick Start Examples](#-quick-start-examples) – CLI and Python examples
+- [⚙️ Hyperparameter Tuning](HYPERPARAMETER_TUNING.md) – Optuna/Bayesian optimization guide
 
 ### Development & Community
 - [🧪 Development](#-development) – Tests and code quality
@@ -1110,11 +1112,30 @@ group_analysis.run_group_analysis(
 )
 ```
 
+### Example 10: Hyperparameter Tuning with Optuna
+```bash
+# Tune hyperparameters for a single subject (recommended first step)
+python -m mi3_eeg.run_all_subjects --tune --tune-subjects sub-001 --n-trials 50
+
+# Train all subjects (sub-001 uses tuned hyperparameters, others use defaults)
+python -m mi3_eeg.run_all_subjects --epochs 600
+
+# Analyze tuning results
+python -m mi3_eeg.tuning.analysis --subject sub-001
+python -m mi3_eeg.tuning.analysis --compare
+```
+
+**What gets tuned:** learning rate, dropout, batch size, early stopping patience/delta
+
+**Optimization method:** Bayesian optimization with TPE sampler (50 trials ≈ 3-4 hours)
+
+**See:** [HYPERPARAMETER_TUNING.md](HYPERPARAMETER_TUNING.md) for complete guide
+
 ## 🚧 Future Improvements
 
 - [ ] Additional model architectures (RNN, Transformer, Attention)
 - [ ] Transfer learning capabilities
-- [ ] Hyperparameter optimization with Optuna
+- [x] Hyperparameter optimization with Optuna
 - [ ] Cross-subject validation
 - [ ] Real-time inference pipeline
 - [ ] Web-based demo interface
