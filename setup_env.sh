@@ -146,7 +146,7 @@ fi
 
 # Check analysis submodule
 echo -n "Checking analysis submodule..."
-if python -c "from mi3_eeg.analysis import group_analysis" 2>&1; then
+if python -c "from mi3_eeg.analysis import run_group_analysis" 2>&1; then
     write_success "analysis submodule ready"
 else
     write_error "analysis submodule import failed"
@@ -216,7 +216,7 @@ if [ "$ALL_PASS" = true ]; then
     echo -e "    ${CYAN}pytest${NC}"
     echo ""
     echo -e "  ${YELLOW}• Run group analysis:${NC}"
-    echo -e "    ${CYAN}python -m mi3_eeg.analysis.group_analysis${NC}"
+    echo -e "    ${CYAN}python -m mi3_eeg.analysis${NC}"
     echo ""
     exit 0
 else

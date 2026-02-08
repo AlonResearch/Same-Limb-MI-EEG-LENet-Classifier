@@ -137,7 +137,7 @@ try {
 # Check analysis submodule
 Write-Host "Checking analysis submodule..." -NoNewline
 try {
-    python -c "from mi3_eeg.analysis import group_analysis" 2>&1 | Out-Null
+    python -c "from mi3_eeg.analysis import run_group_analysis" 2>&1 | Out-Null
     if ($LASTEXITCODE -ne 0) {
         throw "Import failed with exit code $LASTEXITCODE"
     }
