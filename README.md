@@ -190,7 +190,7 @@ PyTorch with CUDA 12.4 is automatically installed through the custom PyTorch ind
 pip install uv
 
 # Clone and setup
-git clone <repository-url>
+git clone -b batch https://github.com/AlonResearch/Same-Limb-MI-EEG-LENet-Classifier.git
 cd Same-Limb-MI-EEG-LENet-Classifier
 .\setup_env.ps1
 ```
@@ -219,7 +219,7 @@ The setup script will:
 pip install uv
 
 # Clone and setup
-git clone <repository-url>
+git clone -b batch https://github.com/AlonResearch/Same-Limb-MI-EEG-LENet-Classifier.git
 cd Same-Limb-MI-EEG-LENet-Classifier
 chmod +x setup_env.sh
 ./setup_env.sh
@@ -290,7 +290,7 @@ If this fails, see the troubleshooting section above.
 
 2. **Clone the repository:**
 ```powershell
-git clone <repository-url>
+git clone -b batch https://github.com/AlonResearch/Same-Limb-MI-EEG-LENet-Classifier.git
 cd Same-Limb-MI-EEG-LENet-Classifier
 ```
 
@@ -330,7 +330,7 @@ If this fails, see the troubleshooting section above.
 
 2. **Clone the repository:**
 ```bash
-git clone <repository-url>
+git clone -b batch https://github.com/AlonResearch/Same-Limb-MI-EEG-LENet-Classifier.git
 cd Same-Limb-MI-EEG-LENet-Classifier
 ```
 
