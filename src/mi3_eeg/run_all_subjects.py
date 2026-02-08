@@ -19,11 +19,9 @@ def main(
     derivatives_path = paths.dataset_derivatives
     metrics_path = paths.reports_metrics
     
-    # Override config with CLI arguments if provided
-    if epochs is not None:
-        training_config.epochs = epochs
-    if device is not None:
-        training_config.device = device
+    # Use CLI arguments if provided, otherwise use config defaults
+    epochs_to_use = epochs if epochs is not None else training_config.epochs
+    device_to_use = device if device is not None else training_config.device
     
     # Find all .mat files (both raw and standardized formats)
     all_files = sorted(derivatives_path.glob("*.mat"))
@@ -59,8 +57,6 @@ def main(
     for f in mat_files:
         logger.info(f"  - {f.name}")
     
-    # Determine epochs to display (use override or config default)
-    epochs_to_use = epochs if epochs is not None else training_config.epochs
     logger.info(f"\nStarting training runs with {epochs_to_use} epochs each ({len(mat_files)} total)...")
     
     # Run training on each file
@@ -80,11 +76,12 @@ def main(
         if models:
             cmd.extend(["--models"] + models)
         
-        if epochs is not None:
-            cmd.extend(["--epochs", str(epochs)])
+        # Always pass epochs (either from CLI or config default)
+        cmd.extend(["--epochs", str(epochs_to_use)])
         
-        if device:
-            cmd.extend(["--device", device])
+        # Always pass device if specified (either from CLI or config default)
+        if device_to_use:
+            cmd.extend(["--device", device_to_use])
         
         try:
             result = subprocess.run(cmd, check=True)
