@@ -11,7 +11,7 @@ from pathlib import Path
 
 import torch
 
-from mi3_eeg.config import DataConfig, ModelConfig, Paths, TrainingConfig
+from mi3_eeg.config import DataConfig, ModelConfig, Paths, TuningConfig
 from mi3_eeg.dataset import load_dataset_from_config, prepare_data_loaders
 from mi3_eeg.evaluation import (
     compare_models,
@@ -25,7 +25,7 @@ from mi3_eeg.train import train_model
 from mi3_eeg.visualization import create_all_visualizations
 
 
-def _create_training_config_from_args(
+def _create_tuning_config_from_args(
     epochs: int | None = None,
     learning_rate: float | None = None,
     dropout: float | None = None,
@@ -33,8 +33,8 @@ def _create_training_config_from_args(
     early_stopping_patience: int | None = None,
     early_stopping_min_delta: float | None = None,
     device: str = "cuda",
-) -> TrainingConfig:
-    """Create TrainingConfig with optional hyperparameter overrides.
+) -> TuningConfig:
+    """Create TuningConfig with optional hyperparameter overrides.
     
     Args:
         epochs: Number of training epochs.
@@ -46,13 +46,13 @@ def _create_training_config_from_args(
         device: Device to use ("cuda" or "cpu").
     
     Returns:
-        TrainingConfig with specified or default values.
+        TuningConfig with specified or default values.
     """
     # Start with defaults
-    default_config = TrainingConfig(device=device)
+    default_config = TuningConfig(device=device)
     
     # Override with provided values
-    return TrainingConfig(
+    return TuningConfig(
         epochs=epochs if epochs is not None else default_config.epochs,
         batch_size=batch_size if batch_size is not None else default_config.batch_size,
         learning_rate=learning_rate if learning_rate is not None else default_config.learning_rate,
@@ -173,8 +173,8 @@ def main(
         f"Class distribution: {data_bundle.class_distribution}"
     )
     
-    # Create training config with hyperparameter overrides
-    training_config = _create_training_config_from_args(
+    # Create tuning config with hyperparameter overrides
+    tuning_config = _create_tuning_config_from_args(
         epochs=epochs,
         learning_rate=learning_rate,
         dropout=dropout,
@@ -186,7 +186,7 @@ def main(
     
     # Prepare data loaders
     train_loader, val_loader, test_loader = prepare_data_loaders(
-        data_bundle, data_config, batch_size=training_config.batch_size, device=device
+        data_bundle, data_config, batch_size=tuning_config.batch_size, device=device
     )
     
     # === STAGE 2: Model Training ===
@@ -195,7 +195,7 @@ def main(
     model_config = ModelConfig(
         channel_count=data_bundle.channel_count,
         classes_num=data_bundle.num_classes,
-        drop_out=training_config.dropout,
+        drop_out=tuning_config.dropout,
     )
     
     trained_models = {}
@@ -212,7 +212,7 @@ def main(
             model,
             train_loader,
             val_loader,
-            training_config,
+            tuning_config,
             save_path=paths.models / f"{data_config.subject_id}_{model_type}_best.pth",
         )
         

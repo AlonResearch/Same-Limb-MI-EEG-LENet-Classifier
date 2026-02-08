@@ -17,7 +17,7 @@ if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
     except Exception:
         pass  # Fallback if reconfigure not available
 
-from mi3_eeg.config import Paths, TrainingConfig
+from mi3_eeg.config import Paths, TuningConfig
 from mi3_eeg.logger import logger, setup_logger
 from mi3_eeg.metrics_aggregator import generate_metrics_report
 from mi3_eeg.tuning import load_hyperparameters, tune_subject
@@ -155,22 +155,22 @@ def main(
     log_file = log_dir / "run_all_subjects.log"
     setup_logger(log_file=log_file)
     
-    # Create training config with overridden values if provided
-    training_config = TrainingConfig()
+    # Create tuning config with overridden values if provided
+    tuning_config = TuningConfig()
     if epochs is not None:
         # Create new config with custom epochs (frozen dataclass pattern)
-        training_config = TrainingConfig(
+        tuning_config = TuningConfig(
             epochs=epochs,
-            batch_size=training_config.batch_size,
-            learning_rate=training_config.learning_rate,
-            dropout=training_config.dropout,
-            early_stopping_patience=training_config.early_stopping_patience,
-            early_stopping_min_delta=training_config.early_stopping_min_delta,
-            device=device if device is not None else training_config.device,
+            batch_size=tuning_config.batch_size,
+            learning_rate=tuning_config.learning_rate,
+            dropout=tuning_config.dropout,
+            early_stopping_patience=tuning_config.early_stopping_patience,
+            early_stopping_min_delta=tuning_config.early_stopping_min_delta,
+            device=device if device is not None else tuning_config.device,
         )
     elif device is not None:
         # Create new config with custom device only
-        training_config = TrainingConfig(device=device)
+        tuning_config = TuningConfig(device=device)
     
     # Find all .mat files (both raw and standardized formats)
     all_files = sorted(derivatives_path.glob("*.mat"))
@@ -268,7 +268,7 @@ def main(
         )
     
     # === TRAINING PHASE ===
-    logger.info(f"\nStarting training runs with {training_config.epochs} epochs each ({len(valid_files)} total)...")
+    logger.info(f"\nStarting training runs with {tuning_config.epochs} epochs each ({len(valid_files)} total)...")
     
     # Run training on each valid file
     for i, mat_file in enumerate(valid_files, 1):
@@ -293,12 +293,12 @@ def main(
             "--subject-file",
             mat_file.name,
             "--epochs",
-            str(training_config.epochs),
+            str(tuning_config.epochs),
         ]
         
         # Add device argument
-        if training_config.device:
-            cmd.extend(["--device", training_config.device])
+        if tuning_config.device:
+            cmd.extend(["--device", tuning_config.device])
         
         # Add models argument if specified
         if models:

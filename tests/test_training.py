@@ -9,7 +9,7 @@ import pytest
 import torch
 from torch import nn
 
-from mi3_eeg.config import TrainingConfig
+from mi3_eeg.config import TuningConfig
 from mi3_eeg.dataset import create_data_loader
 from mi3_eeg.model import LENet
 from mi3_eeg.train import (
@@ -190,7 +190,7 @@ def test_train_model_basic(sample_eeg_data: tuple[np.ndarray, np.ndarray]) -> No
     
     # Create model and config
     model = LENet(classes_num=3, channel_count=62, drop_out=0.5)
-    config = TrainingConfig(
+    config = TuningConfig(
         epochs=5,  # Just a few epochs for testing
         batch_size=4,
         learning_rate=0.01,
@@ -233,7 +233,7 @@ def test_train_model_with_empty_loader(sample_eeg_data: tuple[np.ndarray, np.nda
     )
 
     model = LENet(classes_num=3, channel_count=62, drop_out=0.5)
-    config = TrainingConfig(
+    config = TuningConfig(
         epochs=1,
         batch_size=100,
         learning_rate=0.01,
@@ -276,7 +276,7 @@ def test_train_model_saves_on_exception(
     monkeypatch.setattr(train_module, "validate_one_epoch", fake_validate_one_epoch)
 
     model = LENet(classes_num=3, channel_count=62, drop_out=0.5)
-    config = TrainingConfig(
+    config = TuningConfig(
         epochs=3,
         batch_size=4,
         learning_rate=0.01,
@@ -297,7 +297,7 @@ def test_train_model_with_very_high_patience(sample_eeg_data: tuple[np.ndarray, 
     val_loader = create_data_loader(data, labels, batch_size=4, device="cpu")
 
     model = LENet(classes_num=3, channel_count=62, drop_out=0.5)
-    config = TrainingConfig(
+    config = TuningConfig(
         epochs=3,
         batch_size=4,
         learning_rate=0.01,
@@ -329,7 +329,7 @@ def test_train_model_saves_best(
     val_loader = create_data_loader(val_data, val_labels, batch_size=4, device="cpu")
     
     model = LENet(classes_num=3, channel_count=62, drop_out=0.5)
-    config = TrainingConfig(epochs=3, batch_size=4, device="cpu")
+    config = TuningConfig(epochs=3, batch_size=4, device="cpu")
     
     save_path = tmp_path / "best_model.pth"
     
@@ -359,7 +359,7 @@ def test_train_model_early_stopping(sample_eeg_data: tuple[np.ndarray, np.ndarra
     val_loader = create_data_loader(val_data, val_labels, batch_size=4, device="cpu")
     
     model = LENet(classes_num=3, channel_count=62, drop_out=0.5)
-    config = TrainingConfig(
+    config = TuningConfig(
         epochs=100,  # Many epochs
         batch_size=4,
         device="cpu",
@@ -418,7 +418,7 @@ def test_training_improves_accuracy(sample_eeg_data: tuple[np.ndarray, np.ndarra
     val_loader = create_data_loader(val_data, val_labels, batch_size=4, device="cpu")
     
     model = LENet(classes_num=3, channel_count=62, drop_out=0.5)
-    config = TrainingConfig(
+    config = TuningConfig(
         epochs=10,
         batch_size=4,
         learning_rate=0.01,
@@ -450,7 +450,7 @@ def test_model_in_eval_mode_after_training(
     val_loader = create_data_loader(val_data, val_labels, batch_size=4, device="cpu")
     
     model = LENet(classes_num=3, channel_count=62, drop_out=0.5)
-    config = TrainingConfig(epochs=2, batch_size=4, device="cpu")
+    config = TuningConfig(epochs=2, batch_size=4, device="cpu")
     
     _ = train_model(model, train_loader, val_loader, config)
     

@@ -14,7 +14,7 @@ import torch
 from sklearn.metrics import f1_score
 from torch import nn, optim
 
-from mi3_eeg.config import TrainingConfig
+from mi3_eeg.config import TuningConfig
 from mi3_eeg.logger import logger
 
 if TYPE_CHECKING:
@@ -188,7 +188,7 @@ def train_model(
     model: nn.Module,
     train_loader: DataLoader,
     val_loader: DataLoader,
-    config: TrainingConfig,
+    config: TuningConfig,
     save_path: Path | None = None,
 ) -> TrainingHistory:
     """Train a model with the full training loop.
@@ -197,7 +197,7 @@ def train_model(
         model: Neural network model to train.
         train_loader: DataLoader for training data.
         val_loader: DataLoader for validation data.
-        config: Training configuration.
+        config: Tuning configuration with hyperparameters.
         save_path: Optional path to save best model weights.
     
     Returns:
@@ -340,7 +340,7 @@ def quick_train(
     )
 
     # Create config
-    config = TrainingConfig(
+    config = TuningConfig(
         epochs=epochs,
         batch_size=batch_size,
         device=device,

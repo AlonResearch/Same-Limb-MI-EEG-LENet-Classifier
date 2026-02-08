@@ -14,7 +14,7 @@ from mi3_eeg.config import (
     DataConfig,
     ModelConfig,
     Paths,
-    TrainingConfig,
+    TuningConfig,
 )
 
 # Logging
@@ -74,7 +74,7 @@ __all__ = [
     "Paths",
     "DataConfig",
     "ModelConfig",
-    "TrainingConfig",
+    "TuningConfig",
     # Logging
     "logger",
     "setup_logger",

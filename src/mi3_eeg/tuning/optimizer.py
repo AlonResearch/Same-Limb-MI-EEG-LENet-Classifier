@@ -15,7 +15,7 @@ import optuna
 from optuna.pruners import MedianPruner
 from optuna.samplers import TPESampler
 
-from mi3_eeg.config import DataConfig, ModelConfig, Paths, TrainingConfig
+from mi3_eeg.config import DataConfig, ModelConfig, Paths, TuningConfig
 from mi3_eeg.dataset import load_dataset_from_config, prepare_data_loaders
 from mi3_eeg.logger import logger
 from mi3_eeg.model import create_model
@@ -112,8 +112,8 @@ def run_single_trial(
     
     model = create_model("lenet", model_config, device)
     
-    # Create training config with trial hyperparameters
-    training_config = TrainingConfig(
+    # Create tuning config with trial hyperparameters
+    tuning_config = TuningConfig(
         epochs=max_epochs,
         batch_size=int(hyperparams["batch_size"]),
         learning_rate=hyperparams["learning_rate"],
@@ -131,7 +131,7 @@ def run_single_trial(
             model,
             train_loader,
             val_loader,
-            training_config,
+            tuning_config,
             save_path=temp_save_path,
         )
         

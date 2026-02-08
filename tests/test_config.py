@@ -11,7 +11,7 @@ from mi3_eeg.config import (
     DataConfig,
     ModelConfig,
     Paths,
-    TrainingConfig,
+    TuningConfig,
 )
 
 
