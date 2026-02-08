@@ -460,10 +460,23 @@ Process all subjects at once:
 ```bash
 python -m mi3_eeg.run_all_subjects
 ```
+
+The `run_all_subjects` script accepts the same arguments as `main.py`:
+```bash
+# Customize training with arguments
+python -m mi3_eeg.run_all_subjects --epochs 50 --device cuda --models lenet
+
+# Available arguments:
+# --epochs N         Number of training epochs (default: 600)
+# --device DEVICE    Device to use: cuda or cpu (default: auto-detect)
+# --models MODEL     Model type(s) to train (default: lenet)
+```
+
 This script will:
-- ✅ Automatically detect all `*_eeg200hz.mat` files in the derivatives folder
-- ✅ Skip subjects that have already been processed
-- ✅ Train each subject with 50 epochs
+- ✅ Automatically detect all `.mat` files in the derivatives folder (both raw and standardized formats)
+- ✅ Deduplicate by subject ID (prefers standardized format if both exist)
+- ✅ Auto-convert raw format files to standardized format on first run
+- ✅ Train each unique subject with specified settings
 - ✅ Save results to `reports/metrics/sub-XXX_lenet_results.json`
 - ✅ Generate figures in `reports/figures/`
 - ✅ Save trained models in `models/sub-XXX_lenet_*.pth`
@@ -995,8 +1008,11 @@ python -m mi3_eeg.main --subject-file sub-001_eeg200hz.mat --epochs 50 --device 
 
 ### Example 2: Train All Subjects (Pipeline A)
 ```bash
-# Process all 25 subjects with individual models
+# Process all subjects with default settings (600 epochs)
 python -m mi3_eeg.run_all_subjects
+
+# Or customize training settings (same arguments as main.py)
+python -m mi3_eeg.run_all_subjects --epochs 50 --device cuda --models lenet
 ```
 
 ### Example 3: Analyze Raw EEG (Pipeline C - Independent!)
