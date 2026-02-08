@@ -962,24 +962,25 @@ See [Hyperparameter Tuning Guide](HYPERPARAMETER_TUNING.md) for full documentati
 ### Training Results (25 Subjects)
 
 #### Subject-Specific Training Performance
-- **Mean Overall Accuracy:** 51.47% ± 8.19%
-- **Range:** 37.22% - 75.00%
-- **Median:** 51.11%
+- **Mean Overall Accuracy:** 59.21% ± 9.63%
+- **Range:** 39.51% - 79.01%
+- **Median:** 59.26%
+- **95% CI:** ±3.97%
 - **Per-Class Performance:**
-  - Rest: 58.33% ± 16.95% (best)
-  - Hand: 50.42% ± 12.60%
-  - Elbow: 45.92% ± 15.41%
+  - Rest: 72.74% ± 10.90% (best, 95% CI: ±4.50%)
+  - Elbow: 56.44% ± 13.06% (95% CI: ±5.39%)
+  - Hand: 48.44% ± 13.44% (95% CI: ±5.55%)
 
 #### Statistical Significance
-- **One-Way ANOVA:** F(2,72) = 5.83, **p = 0.0045** ✓✓✓
-  - Significant difference between classes
-  - Effect size: η² = 0.139
+- **One-Way ANOVA:** F(2,72) = 24.47, **p < 0.001** ✓✓✓
+  - Highly significant difference between classes
+  - Effect size: η² = 0.405 (large effect)
 - **Pairwise Comparisons (FDR-corrected):**
-  - Rest vs Elbow: **p = 0.0005**, d = 0.81 (strong effect) ✓✓✓
-  - Rest vs Hand: **p = 0.029**, d = 0.47 (moderate effect) ✓
-  - Elbow vs Hand: p = 0.27 (not significant)
+  - Rest vs Elbow: **p < 0.001**, d = 1.13 (very large effect) ✓✓✓
+  - Rest vs Hand: **p < 0.001**, d = 1.98 (very large effect) ✓✓✓
+  - Elbow vs Hand: **p = 0.012**, d = 0.54 (moderate effect) ✓✓
 
-**Interpretation:** Rest condition significantly easier to classify than active motor imagery (Elbow/Hand). Hand imagery shows better performance than Elbow, but difference is not statistically significant.
+**Interpretation:** Rest condition is significantly easier to classify than both motor imagery tasks. All three conditions are statistically distinguishable from each other (p < 0.05, FDR-corrected). The large effect sizes indicate strong discriminative patterns in the EEG data for same-limb motor imagery tasks.
 
 ### Time-Frequency Analysis
 
@@ -995,8 +996,10 @@ See [Hyperparameter Tuning Guide](HYPERPARAMETER_TUNING.md) for full documentati
 
 | Model              | Accuracy | Rest   | Elbow  | Hand   | Notes              |
 |--------------------|----------|--------|--------|--------|---------------------|
-| LENet (per-subject)| 51.47%   | 58.33% | 45.92% | 50.42% | 25 subjects        |
+| LENet (per-subject)| 59.21%   | 72.74% | 56.44% | 48.44% | 25 subjects        |
 | Chance Level       | 33.33%   | 33.33% | 33.33% | 33.33% | Random baseline    |
+| Best Subject       | 79.01%   | 96.30% | 81.48% | 74.07% | Sub with highest acc|
+| Worst Subject      | 39.51%   | 51.85% | 40.74% | 22.22% | Sub with lowest acc |
 
 **Training Configuration:**
 - Epochs: 50 per subject
