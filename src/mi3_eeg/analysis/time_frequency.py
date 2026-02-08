@@ -56,18 +56,21 @@ def compute_morlet_tfr(
     logger.info(f"Frequency range: {freqs[0]:.1f}-{freqs[-1]:.1f} Hz ({len(freqs)} freqs)")
     
     # Use MNE's tfr_array_morlet for standardized computation
-    power = mne.time_frequency.tfr_array_morlet(
-        data,
-        sfreq=sfreq,
-        freqs=freqs,
-        n_cycles=n_cycles,
-        use_fft=use_fft,
-        zero_mean=zero_mean,
-        decim=decim,
-        output='power',
-        n_jobs=-1,  # Use all available cores
-        verbose='WARNING'
-    )
+    kwargs = {
+        'data': data,
+        'sfreq': sfreq,
+        'freqs': freqs,
+        'n_cycles': n_cycles,
+        'use_fft': use_fft,
+        'zero_mean': zero_mean,
+        'output': 'power',
+        'n_jobs': -1,  # Use all available cores
+        'verbose': 'WARNING'
+    }
+    if decim is not None:
+        kwargs['decim'] = decim
+    
+    power = mne.time_frequency.tfr_array_morlet(**kwargs)
 
     itc = None
     if compute_itc:

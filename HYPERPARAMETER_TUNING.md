@@ -217,7 +217,8 @@ python -m mi3_eeg.run_all_subjects --epochs 600
 # This would require ~75-100 hours - not recommended unless you have time
 ```
 
-## Troubleshooting
+<details>
+<summary><h2>Troubleshooting</h2></summary>
 
 ### Out of Memory Errors
 
@@ -251,6 +252,8 @@ Delete the old config and run tuning again:
 rm models/Hyperparameters/best_configs/sub-001-200hz.json
 python -m mi3_eeg.run_all_subjects --tune --tune-subjects sub-001 --n-trials 50
 ```
+
+</details>
 
 ## Technical Details
 

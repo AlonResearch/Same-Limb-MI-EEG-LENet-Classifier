@@ -246,7 +246,7 @@ def _compute_group_time_frequency_and_topography(
             montage=montage,
             cache_dir=cache_dir,
         )
-        logger.info("✓ Saved aggregated TFR data for visualization regeneration")
+        logger.info("[OK] Saved aggregated TFR data for visualization regeneration")
     except Exception as e:
         logger.warning(f"Could not save aggregated TFR data: {e}")
 
@@ -464,26 +464,28 @@ def perform_classification_statistics(
 
 
 def run_group_analysis(
+    analysis_type: str = "classification",
     config: GroupAnalysisConfig | None = None,
     paths: Paths | None = None,
     model_name: str = "lenet",
     subjects_subset: list[str] | None = None,
 ) -> None:
-    """Run complete group-level analysis pipeline.
-    
-    This function orchestrates:
-    1. Loading classification metrics
-    2. Creating performance summary plots
-    3. Performing statistical tests
-    4. Computing group-level time-frequency analysis (if enabled)
-    5. Creating topographical maps (if enabled)
+    """Run group-level analysis pipeline.
     
     Args:
+        analysis_type: Type of analysis to run:
+            - "classification": Classification metrics & statistics only (Pipeline B)
+            - "tfr": Time-frequency & topography analysis only (Pipeline C)  
+            - "all": Both classification and TFR analysis (Pipeline D)
         config: Group analysis configuration. If None, uses defaults.
         paths: Project paths. If None, uses default paths.
         model_name: Name of the model to analyze.
         subjects_subset: Optional list of subject IDs to analyze. If None, analyzes all.
     """
+    if analysis_type not in ["classification", "tfr", "all"]:
+        logger.error(f"Invalid analysis_type: {analysis_type}. Must be 'classification', 'tfr', or 'all'.")
+        return
+    
     if config is None:
         config = GroupAnalysisConfig()
     
@@ -491,83 +493,92 @@ def run_group_analysis(
         paths = Paths.from_here()
     
     logger.info("="*80)
-    logger.info("STARTING GROUP-LEVEL ANALYSIS")
+    logger.info(f"STARTING GROUP-LEVEL ANALYSIS (Type: {analysis_type.upper()})")
     logger.info("="*80)
     
     output_dir = paths.reports_group_analysis
     output_dir.mkdir(parents=True, exist_ok=True)
     
     # === STEP 1: Load classification metrics ===
-    logger.info("\n" + "="*80)
-    logger.info("STEP 1: Loading Classification Metrics")
-    logger.info("="*80)
+    if analysis_type in ["classification", "all"]:
+        logger.info("\n" + "="*80)
+        logger.info("STEP 1: Loading Classification Metrics")
+        logger.info("="*80)
+        
+        df_metrics = load_classification_metrics(paths.reports_metrics, model_name)
+        
+        if df_metrics.empty:
+            logger.error("No metrics found. Aborting classification analysis.")
+            if analysis_type == "classification":
+                return
+            df_metrics = None
+        else:
+            # Filter to subset if provided
+            if subjects_subset is not None:
+                df_metrics = df_metrics[df_metrics['Subject'].isin(subjects_subset)]
+                logger.info(f"Filtered to {len(df_metrics)} subjects from subset")
+    else:
+        df_metrics = None
     
-    df_metrics = load_classification_metrics(paths.reports_metrics, model_name)
+    stats_results = None
     
-    if df_metrics.empty:
-        logger.error("No metrics found. Aborting group analysis.")
-        return
-    
-    # Filter to subset if provided
-    if subjects_subset is not None:
-        df_metrics = df_metrics[df_metrics['Subject'].isin(subjects_subset)]
-        logger.info(f"Filtered to {len(df_metrics)} subjects from subset")
-    
-    logger.info(f"Analyzing {len(df_metrics)} subjects")
-    
-    # === STEP 2: Create performance visualizations ===
-    logger.info("\n" + "="*80)
-    logger.info("STEP 2: Creating Performance Summary Plots")
-    logger.info("="*80)
-    
-    create_performance_summary_plots(df_metrics, output_dir / "figures", model_name)
-    
-    # === STEP 3: Perform statistical analysis ===
-    logger.info("\n" + "="*80)
-    logger.info("STEP 3: Performing Statistical Analysis")
-    logger.info("="*80)
-    
-    stats_results = perform_classification_statistics(
-        df_metrics, 
-        output_dir / "statistics", 
-        model_name
-    )
+    if df_metrics is not None:
+        logger.info(f"Analyzing {len(df_metrics)} subjects")
+        
+        # === STEP 2: Create performance visualizations ===
+        logger.info("\n" + "="*80)
+        logger.info("STEP 2: Creating Performance Summary Plots")
+        logger.info("="*80)
+        
+        create_performance_summary_plots(df_metrics, output_dir / "figures", model_name)
+        
+        # === STEP 3: Perform statistical analysis ===
+        logger.info("\n" + "="*80)
+        logger.info("STEP 3: Performing Statistical Analysis")
+        logger.info("="*80)
+        
+        stats_results = perform_classification_statistics(
+            df_metrics, 
+            output_dir / "statistics", 
+            model_name
+        )
 
     # === STEP 4: Time-Frequency & Topographical Analysis ===
-    logger.info("\n" + "="*80)
-    logger.info("STEP 4: Time-Frequency & Topographical Analysis")
-    logger.info("="*80)
+    if analysis_type in ["tfr", "all"]:
+        logger.info("\n" + "="*80)
+        logger.info("STEP 4: Time-Frequency & Topographical Analysis")
+        logger.info("="*80)
 
-    mat_files = _get_subject_mat_files(paths, subjects_subset)
-    _compute_group_time_frequency_and_topography(mat_files, config, output_dir)
+        mat_files = _get_subject_mat_files(paths, subjects_subset)
+        _compute_group_time_frequency_and_topography(mat_files, config, output_dir)
     
-    # === STEP 4: Summary ===
+    # === Summary ===
     logger.info("\n" + "="*80)
     logger.info("GROUP ANALYSIS COMPLETE")
     logger.info("="*80)
     logger.info(f"Results saved to: {output_dir}")
     logger.info(f"  - Figures: {output_dir / 'figures'}")
     logger.info(f"  - Statistics: {output_dir / 'statistics'}")
-    logger.info(f"  - Time-Frequency/Topography: {output_dir / 'figures'}")
     
-    # Print summary statistics
-    overall_stats = stats_results['overall_accuracy']
-    logger.info(f"\nOverall Classification Performance:")
-    logger.info(f"  Mean Accuracy: {overall_stats['mean']*100:.2f}% ± {overall_stats['std']*100:.2f}%")
-    logger.info(f"  Median Accuracy: {overall_stats['median']*100:.2f}%")
-    logger.info(f"  Range: {overall_stats['min']*100:.2f}% - {overall_stats['max']*100:.2f}%")
-    logger.info(f"  95% CI: ± {overall_stats['ci_95']*100:.2f}%")
-    
-    if 'class_anova' in stats_results:
-        anova = stats_results['class_anova']
-        logger.info(f"\nClass Comparison (ANOVA):")
-        logger.info(f"  F({anova['df_between']}, {anova['df_within']}) = {anova['f_statistic']:.4f}, "
-                   f"p = {anova['p_value']:.6f}, η² = {anova['eta_squared']:.4f}")
+    # Print summary statistics if classification was run
+    if stats_results is not None:
+        overall_stats = stats_results['overall_accuracy']
+        logger.info(f"\nOverall Classification Performance:")
+        logger.info(f"  Mean Accuracy: {overall_stats['mean']*100:.2f}% ± {overall_stats['std']*100:.2f}%")
+        logger.info(f"  Median Accuracy: {overall_stats['median']*100:.2f}%")
+        logger.info(f"  Range: {overall_stats['min']*100:.2f}% - {overall_stats['max']*100:.2f}%")
+        logger.info(f"  95% CI: ± {overall_stats['ci_95']*100:.2f}%")
         
-        if anova['p_value'] < 0.05:
-            logger.info("  *** Significant difference between classes (p < 0.05) ***")
-        else:
-            logger.info("  No significant difference between classes (p ≥ 0.05)")
+        if 'class_anova' in stats_results:
+            anova = stats_results['class_anova']
+            logger.info(f"\nClass Comparison (ANOVA):")
+            logger.info(f"  F({anova['df_between']}, {anova['df_within']}) = {anova['f_statistic']:.4f}, "
+                       f"p = {anova['p_value']:.6f}, η² = {anova['eta_squared']:.4f}")
+            
+            if anova['p_value'] < 0.05:
+                logger.info("  *** Significant difference between classes (p < 0.05) ***")
+            else:
+                logger.info("  No significant difference between classes (p ≥ 0.05)")
 
 
 def main():
@@ -577,6 +588,9 @@ def main():
     
     parser = argparse.ArgumentParser(description='Run group-level EEG analysis')
     parser.add_argument('--model', type=str, default='lenet', help='Model name')
+    parser.add_argument('--analysis-type', type=str, default='classification', 
+                       choices=['classification', 'tfr', 'all'],
+                       help='Type of analysis to run: classification (Pipeline B), tfr (Pipeline C), or all')
     parser.add_argument('--subjects', type=str, nargs='+', help='Subset of subjects to analyze')
     
     args = parser.parse_args()
@@ -590,6 +604,7 @@ def main():
     setup_logger(name="mi3_eeg", level=logging.INFO, log_file=log_file)
     
     run_group_analysis(
+        analysis_type=args.analysis_type,
         model_name=args.model,
         subjects_subset=args.subjects,
     )

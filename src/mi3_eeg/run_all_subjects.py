@@ -1,10 +1,19 @@
 """Run training on all subjects in the derivatives folder."""
 
 import argparse
+import io
 import subprocess
 import sys
 
 import scipy.io as scio
+
+# Fix Windows encoding issues (cp1252 -> UTF-8)
+if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')  # type: ignore
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')  # type: ignore
+    except Exception:
+        pass  # Fallback if reconfigure not available
 
 from mi3_eeg.config import Paths, TrainingConfig
 from mi3_eeg.logger import logger
@@ -55,10 +64,10 @@ def validate_all_files(mat_files: list) -> tuple[list, list, dict]:
         
         if is_valid:
             valid_files.append(mat_file)
-            logger.info(f"  ✓ {mat_file.name}")
+            logger.info(f"  [OK] {mat_file.name}")
         else:
             invalid_files.append(mat_file)
-            logger.info(f"  ✗ {mat_file.name} - {error_msg}")
+            logger.info(f"  [FAIL] {mat_file.name} - {error_msg}")
     
     return valid_files, invalid_files, validation_results
 
@@ -107,6 +116,7 @@ def main(
     tune: bool = False,
     n_trials: int = 50,
     tune_subjects: list[str] | None = None,
+    fail_fast: bool = False,
 ):
     """Run training on all .mat files in derivatives folder.
     
@@ -220,9 +230,12 @@ def main(
                     device=device or "cuda",
                     max_epochs=epochs or 600,
                 )
-                logger.info(f"✓ Tuning completed for {subject_id}")
+                logger.info(f"[OK] Tuning completed for {subject_id}")
             except Exception as e:
-                logger.error(f"✗ Tuning failed for {subject_id}: {e}", exc_info=True)
+                logger.error(f"[FAIL] Tuning failed for {subject_id}: {e}", exc_info=True)
+                if fail_fast:
+                    logger.error("Stopping tuning (--fail-fast enabled). No computation wasted on remaining subjects.")
+                    sys.exit(1)
                 logger.info("Continuing with default hyperparameters...")
         
         logger.info(
@@ -281,9 +294,9 @@ def main(
         
         try:
             result = subprocess.run(cmd, check=True)
-            logger.info(f"✓ Successfully completed: {mat_file.name}")
+            logger.info(f"[OK] Successfully completed: {mat_file.name}")
         except subprocess.CalledProcessError as e:
-            logger.error(f"✗ Failed on: {mat_file.name}", exc_info=True)
+            logger.error(f"[FAIL] Failed on: {mat_file.name}", exc_info=True)
             # Continue with next file
             continue
     
@@ -303,9 +316,9 @@ def main(
     
     try:
         generate_metrics_report(metrics_path)
-        logger.info("✓ Metrics report generated successfully!")
+        logger.info("[OK] Metrics report generated successfully!")
     except Exception as e:
-        logger.error(f"✗ Failed to generate metrics report: {e}")
+        logger.error(f"[FAIL] Failed to generate metrics report: {e}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -356,6 +369,12 @@ if __name__ == "__main__":
         help="Subject IDs to tune (e.g., sub-001 sub-002). Use with --tune flag.",
     )
     
+    parser.add_argument(
+        "--fail-fast",
+        action="store_true",
+        help="Stop immediately on first tuning error (prevents wasted computation on remaining subjects).",
+    )
+    
     args = parser.parse_args()
     main(
         models=args.models,
@@ -364,4 +383,5 @@ if __name__ == "__main__":
         tune=args.tune,
         n_trials=args.n_trials,
         tune_subjects=args.tune_subjects,
+        fail_fast=args.fail_fast,
     )

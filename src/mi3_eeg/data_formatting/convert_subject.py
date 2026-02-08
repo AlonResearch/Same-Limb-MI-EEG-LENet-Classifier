@@ -53,7 +53,7 @@ def main():
         )
         
         logger.info("=" * 80)
-        logger.info("✓ Formatting completed successfully!")
+        logger.info("[OK] Formatting completed successfully!")
         logger.info(f"  Input:  {input_file}")
         logger.info(f"  Output: {output_file}")
         logger.info("=" * 80)

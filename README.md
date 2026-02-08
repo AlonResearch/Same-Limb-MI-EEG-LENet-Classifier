@@ -497,7 +497,8 @@ This script will:
 - ✅ Save trained models in `models/sub-XXX_lenet_*.pth`
 
 The script will display progress and automatically continue if a subject fails.
-## 🔍 Troubleshooting
+<details>
+<summary><h2>🔍 Troubleshooting</h2></summary>
 
 ### Common Issues
 
@@ -596,6 +597,8 @@ python -c "from mi3_eeg.analysis import run_group_analysis; print('✅ Analysis 
 pip install -e .
 ```
 
+</details>
+
 ### Using in Python
 
 ```python
@@ -687,7 +690,8 @@ The project expects BIDS-formatted MI3 data in `Datasets/MI3/`:
 1. Python loads from derivatives → Class balancing → PyTorch tensors
 2. Train/test split (80/20) → DataLoaders → Model training
 
-## 🔄 Complete Pipeline Workflow
+<details>
+<summary><h2>🔄 Complete Pipeline Workflow</h2></summary>
 
 The project has **4 independent pipelines** with flexible execution options:
 
@@ -724,7 +728,11 @@ python -m mi3_eeg.run_all_subjects
 Aggregate training results and perform statistical analysis on classification performance:
 
 ```bash
+# Classification-only analysis (Pipeline B)
 python -m mi3_eeg.analysis.group_analysis --analysis-type classification
+
+# Or use default (equivalent to above)
+python -m mi3_eeg.analysis.group_analysis
 ```
 
 **Timing:** 2-5 minutes
@@ -774,7 +782,11 @@ reports/group_analysis/statistics/
 Analyze raw EEG data with no dependency on trained models:
 
 ```bash
+# TFR-only analysis (Pipeline C)
 python -m mi3_eeg.analysis.group_analysis --analysis-type tfr
+
+# Or run both pipelines (B + C)
+python -m mi3_eeg.analysis.group_analysis --analysis-type all
 ```
 
 **Timing:** 15-30 minutes
@@ -835,7 +847,10 @@ python -m mi3_eeg.analysis.regenerate_visualizations
 
 ---
 
-## 🔀 Pipeline Combinations
+</details>
+
+<details>
+<summary><h2>🔀 Pipeline Combinations</h2></summary>
 
 **Option 1: Training Only**
 ```
@@ -870,6 +885,8 @@ Time Saved: ~23 minutes by running A & C in parallel
 Pipeline C → Pipeline D → Done (seconds)
 Quickly regenerate TFR plots after adjusting parameters
 ```
+
+</details>
 
 ## 🧪 Development
 
@@ -917,6 +934,30 @@ Results are available in:
 - `reports/metrics/sub-XXX_lenet_results.json` - Detailed metrics for each subject
 - `reports/figures/sub-XXX_lenet_*.png` - Visualizations (confusion matrices, training curves)
 - `models/sub-XXX_lenet_*.pth` - Trained model weights
+
+### Hyperparameter Tuning Results
+
+**✅ Bayesian Optimization with Optuna** - 5 tunable parameters optimized per subject
+
+#### Sub-012 Baseline (50 Trials)
+- **Best Trial:** #36
+- **Best Validation F1:** **76.88%** (baseline: 51.47%)
+- **Improvement:** +25.41 percentage points
+- **Optimized Hyperparameters:**
+  - Learning Rate: 0.00205
+  - Dropout: 0.405
+  - Batch Size: 32
+  - Early Stopping Patience: 99
+  - Early Stopping Min Delta: 4.55e-05
+- **Inference:** Aggressive early stopping (min_delta=4.55e-05) + high patience (99) + low dropout (0.405) enables fine-grained convergence without overfitting
+
+**Tuning Configuration:**
+- Sampler: Tree-structured Parzen Estimator (TPE)
+- Pruner: Median pruner (stops unpromising trials early)
+- Storage: SQLite persistent (automatic crash recovery)
+- Command: `python -m mi3_eeg.run_all_subjects --tune --tune-subjects sub-012 --n-trials 50 --epochs 100`
+
+See [Hyperparameter Tuning Guide](HYPERPARAMETER_TUNING.md) for full documentation.
 
 ### Training Results (25 Subjects)
 
@@ -966,7 +1007,8 @@ Results are available in:
 
 *Results vary based on random initialization, data splits, and subject-specific characteristics.*
 
-## 🔧 Configuration
+<details>
+<summary><h2>🔧 Configuration</h2></summary>
 
 Key configurations in `src/mi3_eeg/config.py`:
 
@@ -1014,6 +1056,8 @@ Key configurations in `src/mi3_eeg/config.py`:
 - **`regenerate_visualizations.py`**: Standalone visualization regeneration from cache
 - **`metrics_aggregator.py`**: Cross-subject metrics aggregation
 - **`visualization.py`**: Analysis-specific plots
+
+</details>
 
 ## � Quick Start Examples
 

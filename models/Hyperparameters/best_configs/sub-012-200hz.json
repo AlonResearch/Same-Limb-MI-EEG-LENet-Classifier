@@ -1,0 +1,15 @@
+{
+  "subject_id": "sub-012",
+  "sampling_rate": 200,
+  "tuned_date": "2026-02-08T12:38:22.753391",
+  "best_trial_number": 36,
+  "best_val_f1": 0.7688492063492064,
+  "n_trials": 50,
+  "hyperparameters": {
+    "learning_rate": 0.00204931997011268,
+    "dropout": 0.405013924012083,
+    "batch_size": 32,
+    "early_stopping_patience": 99,
+    "early_stopping_min_delta": 4.545009064687277e-05
+  }
+}

@@ -171,7 +171,7 @@ def regenerate_from_cache(
         sampling_rate=config.sampling_rate,
     )
     
-    logger.info("✓ Regenerated visualizations successfully")
+    logger.info("[OK] Regenerated visualizations successfully")
     logger.info(f"  TFR maps: {tfr_fig_path}")
     logger.info(f"  Topomaps: {len(topo_fig_paths)} figures")
     
@@ -192,7 +192,7 @@ def main():
     
     try:
         tfr_path, topo_paths = regenerate_from_cache()
-        logger.info("\n✓ Regeneration complete!")
+        logger.info("\n[OK] Regeneration complete!")
         logger.info(f"  TFR maps saved to: {tfr_path}")
         logger.info(f"  Topographical maps saved to:")
         for p in topo_paths:

@@ -88,7 +88,7 @@ def load_mat_from_derivatives(
                                 output_dir=derivatives_folder
                             )
                             converted_count += 1
-                            logger.info(f"✓ Converted: {converted_path.name}")
+                            logger.info(f"[OK] Converted: {converted_path.name}")
                     except Exception as e:
                         # Not a raw format file or cannot convert, skip it
                         pass
