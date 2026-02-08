@@ -1001,7 +1001,7 @@ See [Hyperparameter Tuning Guide](HYPERPARAMETER_TUNING.md) for full documentati
 | Best Subject       | 79.01%   | 96.30% | 81.48% | 74.07% | Sub with highest acc|
 | Worst Subject      | 39.51%   | 51.85% | 40.74% | 22.22% | Sub with lowest acc |
 
-**Training Configuration (Baseline defaults):**
+**Default Training Configuration:**
 - Epochs: 50
 - Batch size: 64
 - Learning rate: 0.01
@@ -1009,19 +1009,13 @@ See [Hyperparameter Tuning Guide](HYPERPARAMETER_TUNING.md) for full documentati
 - Early stopping patience: 50
 - Device: CUDA (GPU acceleration)
 
-**Hyperparameter Tuning Process (7am-12pm, Feb 8):**
-Optuna tuned 5 parameters per subject:
-- Learning rate, Dropout, Batch size, Early stopping patience, Early stopping min delta
-- During tuning: 30 epochs per trial (faster iteration)
-- Best configs saved to `models/Hyperparameters/best_configs/`
+**Hyperparameter Tuning:**
+Optuna Bayesian optimization tuned 5 parameters per subject: learning rate, dropout, batch size, early stopping patience, and early stopping min delta. Best configurations saved to `models/Hyperparameters/best_configs/`.
 
-**Final Training Run (12pm onwards, Feb 8):**
-After tuning completed, all 25 subjects were trained with:
-- **Epochs: 100** (not tuned, falls back to configured value)
-- **Tuned hyperparameters** (for subjects with saved configs):
-  - Example (sub-001): lr=0.002538, dropout=0.525, batch=32, patience=95, min_delta=0.000023
-- **Default hyperparameters** (for subjects without tuned configs):
-  - Example (sub-002): lr=0.01, dropout=0.35, batch=64, patience=50
+**Final Training Configuration:**
+- Epochs: 100 (not tuned)
+- Hyperparameters: Loaded from Optuna-tuned configs where available, defaults otherwise
+- Example tuned config (sub-001): lr=0.002538, dropout=0.525, batch=32, patience=95, min_delta=0.000023
 
 *Results vary based on random initialization, data splits, and subject-specific characteristics.*
 
