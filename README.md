@@ -1,5 +1,14 @@
 # Same Limb MI-EEG LENet Classifier
 
+> **⚠️ IMPORTANT: This is the `batch` branch**
+> 
+> This branch includes **full batch processing capabilities** for training all subjects at once.
+> 
+> - **`batch` branch** (you are here): Run all 25 subjects with `python -m mi3_eeg.run_all_subjects`
+> - **`main` branch**: Single-subject training only
+> 
+> See [installation instructions](#-quick-start) below to clone this specific branch.
+
 A modular, production-ready PyTorch package for classifying motor imagery EEG signals from the MI3 dataset using deep learning, with comprehensive group-level analysis capabilities.
 
 ## 🎯 Overview
@@ -10,6 +19,8 @@ Motor-imagery EEG trials from the MI3 dataset are classified with the LENet arch
 - **Group-Level Analysis** – Comprehensive statistical analysis, time-frequency decomposition (TFR), and topographical brain mapping across all subjects
 
 **Key Features:**
+- ✅ **Batch processing for all subjects** with `run_all_subjects` (batch branch only)
+- ✅ **Auto-conversion** of raw format EEG files to standardized format
 - ✅ Modular, testable architecture following best practices
 - ✅ BIDS-compliant dataset structure
 - ✅ Subject-specific and full-cohort training modes
@@ -177,6 +188,8 @@ PyTorch with CUDA 12.4 is automatically installed through the custom PyTorch ind
 - [uv](https://docs.astral.sh/uv/) package manager (recommended) or pip
   - **uv** is a fast Python package installer
   - It's optional but recommended for faster dependency installation
+
+> **📝 Note:** The installation commands below clone the `batch` branch, which includes batch processing for all subjects. If you need single-subject training only, use the `main` branch instead.
 
 ### Installation (Recommended: uv)
 
