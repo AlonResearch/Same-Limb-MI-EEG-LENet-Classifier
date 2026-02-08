@@ -507,6 +507,12 @@ source .venv/bin/activate  # Linux/Mac
 
 # Verify it's activated (you should see (.venv) in your prompt)
 python -c "import mi3_eeg; print('✅ Package found!')"
+
+# If error persists, rerun the setup script
+.\setup_env.ps1  # Windows
+./setup_env.sh   # Linux/Mac
+
+# If still not working, open an issue on GitHub with the error details
 ```
 
 **2. CUDA not detected**
