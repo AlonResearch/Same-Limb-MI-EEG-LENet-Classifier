@@ -15,6 +15,7 @@ import numpy as np
 import scipy.io as scio
 import torch
 import torch.utils.data as data_utils
+from scipy.signal import butter, sosfiltfilt
 
 from mi3_eeg.config import DataConfig, Paths
 from mi3_eeg.logger import logger
@@ -46,8 +47,6 @@ class EEGDataBundle:
 
 def load_mat_from_derivatives(
     mat_path: Path,
-    reduce_rest_ratio: float = 1.0,
-    random_seed: int | None = None,
     expected_sampling_rate: int | None = None,
     validate_timepoints: bool = True,
 ) -> EEGDataBundle:
@@ -55,8 +54,6 @@ def load_mat_from_derivatives(
 
     Args:
         mat_path: Path to .mat file (raw or standardized).
-        reduce_rest_ratio: Fraction of Rest samples to keep (1.0 = keep all).
-        random_seed: Seed for reproducible balancing.
         expected_sampling_rate: Expected Hz for 4-second trials.
         validate_timepoints: If True, warn when timepoints != 4s * sampling_rate.
 
@@ -181,6 +178,7 @@ def load_mat_from_derivatives(
     # Detect format and load data accordingly
     from mi3_eeg.data_formatting import detect_format, convert_raw_format, format_and_save
     
+    inferred_sampling_rate: int | None = None
     data_format = detect_format(mat_data)
     logger.info(f"Detected format: {data_format}")
     
@@ -278,27 +276,27 @@ def load_mat_from_derivatives(
             f"Label values mismatch! Expected {expected_labels}, got {unique_labels}"
         )
     
-    # Balance dataset if needed
-    if reduce_rest_ratio < 1.0:
-        logger.info(f"Reducing Rest class by factor {reduce_rest_ratio}")
-        all_data, all_label = _balance_rest_class(
-            all_data, all_label, reduce_rest_ratio, random_seed
-        )
-        balanced_dist = _calculate_class_distribution(all_label)
-        logger.info(f"Balanced class distribution: {balanced_dist}")
+    # Determine actual sampling rate
+    if data_format == 'raw' and inferred_sampling_rate is not None:
+        actual_sampling_rate = inferred_sampling_rate
+    elif expected_sampling_rate is not None:
+        actual_sampling_rate = expected_sampling_rate
+    else:
+        actual_sampling_rate = 200 # Default from MI3 dataset specification
+    
+    # Apply 0.5 Hz high-pass filter with padding to reduce edge artifacts.
+    logger.info(
+        f"Applying 0.5 Hz high-pass filter with padding (sfreq={actual_sampling_rate}Hz)..."
+    )
+    all_data = _apply_high_pass_filter_to_epochs(
+        all_data, sfreq=actual_sampling_rate, l_freq=0.5, pad_length=100
+    )
+    logger.info("High-pass filter applied successfully")
     
     # Calculate final statistics
     channel_count = all_data.shape[1]
     num_classes = len(np.unique(all_label))
     class_dist = _calculate_class_distribution(all_label)
-    
-    # Determine actual sampling rate
-    if data_format == 'raw' and 'inferred_sampling_rate' in locals():
-        actual_sampling_rate = inferred_sampling_rate
-    elif expected_sampling_rate is not None:
-        actual_sampling_rate = expected_sampling_rate
-    else:
-        actual_sampling_rate = 90  # Default from MI3 dataset specification
     
     return EEGDataBundle(
         data=all_data,
@@ -327,46 +325,47 @@ def _calculate_class_distribution(labels: np.ndarray) -> dict[str, int]:
     }
 
 
-def _balance_rest_class(
+def _apply_high_pass_filter_to_epochs(
     data: np.ndarray,
-    labels: np.ndarray,
-    keep_ratio: float,
-    random_seed: int | None = None,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Downsample Rest class to a target ratio.
+    sfreq: int,
+    l_freq: float,
+    pad_length: int = 100,
+) -> np.ndarray:
+    """Apply a high-pass filter to epoched EEG data with reflected padding.
 
     Args:
-        data: EEG array, shape (samples, channels, timepoints).
-        labels: Label array, shape (samples,) or (samples, 1).
-        keep_ratio: Fraction of Rest samples to keep.
-        random_seed: Seed for reproducible selection.
+        data: EEG array, shape (epochs, channels, timepoints).
+        sfreq: Sampling rate in Hz.
+        l_freq: High-pass cutoff in Hz.
+        pad_length: Number of samples to reflect-pad on each side.
 
     Returns:
-        (balanced_data, balanced_labels)
+        Filtered EEG array with the same shape as input.
     """
-    if random_seed is not None:
-        np.random.seed(random_seed)
-    
-    # Find indices for each class
-    label_flat = labels.flatten()
-    rest_indices = np.where(label_flat == 0)[0]
-    other_indices = np.where(label_flat != 0)[0]
-    
-    # Randomly select a subset of Rest samples
-    num_rest_to_keep = int(len(rest_indices) * keep_ratio)
-    selected_rest_indices = np.random.choice(
-        rest_indices, size=num_rest_to_keep, replace=False
-    )
-    
-    # Combine selected Rest indices with all other class indices
-    balanced_indices = np.concatenate((selected_rest_indices, other_indices))
-    np.random.shuffle(balanced_indices)
-    
-    # Apply indexing
-    balanced_data = data[balanced_indices]
-    balanced_labels = labels[balanced_indices]
-    
-    return balanced_data, balanced_labels
+    if data.ndim != 3:
+        msg = f"Expected data with 3 dims (epochs, channels, timepoints), got {data.ndim}"
+        raise ValueError(msg)
+
+    nyquist = sfreq / 2
+    normalized_freq = l_freq / nyquist
+    sos = butter(4, normalized_freq, btype="high", output="sos")
+
+    epochs, channels, timepoints = data.shape
+    safe_pad = min(pad_length, max(1, timepoints // 4))
+    filtered = np.empty_like(data, dtype=np.float32)
+
+    for epoch_idx in range(epochs):
+        for channel_idx in range(channels):
+            trial = data[epoch_idx, channel_idx, :]
+            padded = np.concatenate(
+                [trial[:safe_pad][::-1], trial, trial[-safe_pad:][::-1]]
+            )
+            filtered_padded = sosfiltfilt(sos, padded)
+            filtered[epoch_idx, channel_idx, :] = filtered_padded[
+                safe_pad : safe_pad + timepoints
+            ]
+
+    return filtered
 
 
 def create_data_loader(
@@ -445,8 +444,6 @@ def load_dataset_from_config(
     
     return load_mat_from_derivatives(
         mat_path=mat_path,
-        reduce_rest_ratio=config.reduce_rest_ratio,
-        random_seed=config.random_seed,
         expected_sampling_rate=config.expected_sampling_rate,
         validate_timepoints=config.validate_timepoints,
     )
@@ -456,30 +453,43 @@ def prepare_data_loaders(
     data_bundle: EEGDataBundle,
     config: DataConfig,
     device: str = "cuda",
-) -> tuple[DataLoader, DataLoader]:
-    """Split EEGDataBundle and return train/test DataLoaders.
+) -> tuple[DataLoader, DataLoader, DataLoader]:
+    """Split EEGDataBundle and return train/val/test DataLoaders.
 
     Args:
         data_bundle: Loaded EEGDataBundle.
-        config: DataConfig containing test_size and random_seed.
+        config: DataConfig containing val_size, test_size, and random_seed.
         device: Device for tensors ("cuda" or "cpu").
 
     Returns:
-        (train_loader, test_loader)
+        (train_loader, val_loader, test_loader)
     """
     from sklearn.model_selection import train_test_split
     
-    # Split data
-    train_data, test_data, train_labels, test_labels = train_test_split(
+    labels_flat = data_bundle.labels.flatten()
+    
+    # First split: train+test vs validation
+    train_test_data, val_data, train_test_labels, val_labels = train_test_split(
         data_bundle.data,
         data_bundle.labels,
+        test_size=config.val_size,
+        shuffle=True,
+        stratify=labels_flat,
+        random_state=config.random_seed,
+    )
+    
+    # Second split: train vs test from remaining data
+    train_data, test_data, train_labels, test_labels = train_test_split(
+        train_test_data,
+        train_test_labels,
         test_size=config.test_size,
         shuffle=True,
+        stratify=train_test_labels.flatten(),
         random_state=config.random_seed,
     )
     
     logger.info(
-        f"Split: {len(train_data)} train samples, {len(test_data)} test samples"
+        f"Split: {len(train_data)} train, {len(val_data)} val, {len(test_data)} test samples"
     )
     
     # Create DataLoaders
@@ -488,6 +498,15 @@ def prepare_data_loaders(
         train_labels,
         batch_size=64,  # Could be configurable
         shuffle=True,
+        drop_last=False,
+        device=device,
+    )
+    
+    val_loader = create_data_loader(
+        val_data,
+        val_labels,
+        batch_size=64,
+        shuffle=False,
         drop_last=False,
         device=device,
     )
@@ -501,4 +520,4 @@ def prepare_data_loaders(
         device=device,
     )
     
-    return train_loader, test_loader
+    return train_loader, val_loader, test_loader
