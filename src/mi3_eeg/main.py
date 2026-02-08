@@ -98,7 +98,9 @@ def main(
     
     logger.info(
         f"Dataset: {data_config.mat_filename}, Subject: {data_config.subject_id}, "
-        f"Sampling: {data_config.sampling_rate}Hz, Test split: {data_config.test_size * 100}%"
+        f"Sampling: {data_config.sampling_rate}Hz, "
+        f"Val split: {data_config.val_size * 100}%, "
+        f"Test split: {data_config.test_size * 100}% of remaining"
     )
     
     # Load dataset with error handling
@@ -124,7 +126,7 @@ def main(
     )
     
     # Prepare data loaders
-    train_loader, test_loader = prepare_data_loaders(
+    train_loader, val_loader, test_loader = prepare_data_loaders(
         data_bundle, data_config, device=device
     )
     
@@ -163,7 +165,7 @@ def main(
         history = train_model(
             model,
             train_loader,
-            test_loader,
+            val_loader,
             training_config,
             save_path=paths.models / f"{data_config.subject_id}_{model_type}_best.pth",
         )

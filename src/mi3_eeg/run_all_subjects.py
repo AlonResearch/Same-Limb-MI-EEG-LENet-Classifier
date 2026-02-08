@@ -4,9 +4,100 @@ import argparse
 import subprocess
 import sys
 
+import scipy.io as scio
+
 from mi3_eeg.config import Paths, TrainingConfig
 from mi3_eeg.logger import logger
 from mi3_eeg.metrics_aggregator import generate_metrics_report
+
+
+def validate_mat_file(mat_path) -> tuple[bool, str | None]:
+    """Check if a .mat file can be loaded.
+    
+    Args:
+        mat_path: Path to .mat file
+        
+    Returns:
+        Tuple (is_valid, error_message)
+        - is_valid: True if file can be loaded
+        - error_message: None if valid, error string if invalid
+    """
+    try:
+        scio.loadmat(str(mat_path), simplify_cells=True)
+        return True, None
+    except ValueError as e:
+        return False, f"Format error: {str(e)}"
+    except Exception as e:
+        return False, f"{type(e).__name__}: {str(e)}"
+
+
+def validate_all_files(mat_files: list) -> tuple[list, list, dict]:
+    """Validate all .mat files and return valid/invalid lists.
+    
+    Args:
+        mat_files: List of Path objects
+        
+    Returns:
+        Tuple (valid_files, invalid_files, validation_results)
+        - valid_files: List of files that can be loaded
+        - invalid_files: List of files that cannot be loaded
+        - validation_results: Dict mapping filename to (is_valid, error_msg)
+    """
+    logger.info("Validating all .mat files...")
+    valid_files = []
+    invalid_files = []
+    validation_results = {}
+    
+    for mat_file in mat_files:
+        is_valid, error_msg = validate_mat_file(mat_file)
+        validation_results[mat_file.name] = (is_valid, error_msg)
+        
+        if is_valid:
+            valid_files.append(mat_file)
+            logger.info(f"  ✓ {mat_file.name}")
+        else:
+            invalid_files.append(mat_file)
+            logger.info(f"  ✗ {mat_file.name} - {error_msg}")
+    
+    return valid_files, invalid_files, validation_results
+
+
+def ask_user_proceed(valid_count: int, invalid_count: int) -> bool:
+    """Ask user if they want to proceed with valid files only.
+    
+    Args:
+        valid_count: Number of valid files
+        invalid_count: Number of invalid files
+        
+    Returns:
+        True if user wants to proceed, False otherwise
+    """
+    print()
+    print("=" * 80)
+    print(f"VALIDATION SUMMARY: {valid_count} valid, {invalid_count} invalid")
+    print("=" * 80)
+    
+    if valid_count == 0:
+        print("❌ No valid files found! Cannot proceed.")
+        print("   Please check the dataset or download from the original source.")
+        return False
+    
+    if invalid_count > 0:
+        print(
+            f"\n⚠️  {invalid_count} file(s) could not be loaded (format errors).\n"
+            f"   Would you like to proceed with the {valid_count} valid file(s)?"
+        )
+        while True:
+            response = input("\nProceed with training? (yes/no): ").strip().lower()
+            if response in ['yes', 'y']:
+                return True
+            elif response in ['no', 'n']:
+                return False
+            else:
+                print("Please enter 'yes' or 'no'")
+    
+    return True
+
 
 def main(
     models: list[str] | None = None,
@@ -72,11 +163,23 @@ def main(
     for f in mat_files:
         logger.info(f"  - {f.name}")
     
-    logger.info(f"\nStarting training runs with {training_config.epochs} epochs each ({len(mat_files)} total)...")
+    # Validate all files before starting
+    valid_files, invalid_files, validation_results = validate_all_files(mat_files)
     
-    # Run training on each file
-    for i, mat_file in enumerate(mat_files, 1):
-        logger.info(f"[{i}/{len(mat_files)}] Processing: {mat_file.name}")
+    # Ask user if they want to proceed with just the valid files
+    if not ask_user_proceed(len(valid_files), len(invalid_files)):
+        logger.info("Training cancelled by user.")
+        return
+    
+    if not valid_files:
+        logger.error("No valid files to process. Exiting.")
+        return
+    
+    logger.info(f"\nStarting training runs with {training_config.epochs} epochs each ({len(valid_files)} total)...")
+    
+    # Run training on each valid file
+    for i, mat_file in enumerate(valid_files, 1):
+        logger.info(f"[{i}/{len(valid_files)}] Processing: {mat_file.name}")
         
         # Build the command with all arguments
         cmd = [
@@ -106,9 +209,15 @@ def main(
             continue
     
     logger.info(
-        "All training runs completed! Results saved in: "
+        f"\nTraining completed! Results saved in: "
         "models/, reports/metrics/, reports/figures/"
     )
+    
+    if invalid_files:
+        logger.info(f"Note: {len(invalid_files)} file(s) were skipped due to format errors:")
+        for f in invalid_files:
+            is_valid, error_msg = validation_results[f.name]
+            logger.info(f"  - {f.name}: {error_msg}")
     
     # Generate comprehensive metrics report
     logger.info("Generating comprehensive metrics report...")
