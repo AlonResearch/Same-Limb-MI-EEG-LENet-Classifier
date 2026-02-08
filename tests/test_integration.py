@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from mi3_eeg.config import DataConfig, ModelConfig, Paths, TuningConfig
+from mi3_eeg.config import DataConfig, ModelConfig, Paths, TrainingConfig
 from mi3_eeg.dataset import load_dataset_from_config, prepare_data_loaders
 from mi3_eeg.evaluation import evaluate_model
 from mi3_eeg.model import create_model
@@ -45,14 +45,14 @@ def test_full_pipeline_with_real_data() -> None:
     model = create_model("lenet", model_config, device="cpu")
     
     # Train for just a few epochs
-    tuning_config = TuningConfig(
+    training_config = TrainingConfig(
         epochs=3,
         batch_size=64,
         device="cpu",
         early_stopping_patience=50,  # Don't trigger early stopping
     )
     
-    history = train_model(model, train_loader, val_loader, tuning_config)
+    history = train_model(model, train_loader, val_loader, training_config)
     
     # Check history
     assert len(history.train_acc) <= 3
@@ -78,7 +78,7 @@ def test_package_imports() -> None:
         LENet,
         ModelConfig,
         Paths,
-        TuningConfig,
+        TrainingConfig,
         TrainingHistory,
         compare_models,
         create_data_loader,

@@ -106,8 +106,8 @@ class DataConfig:
 
 
 @dataclass(frozen=True)
-class TuningConfig:
-    """Hyperparameter tuning configuration.
+class TrainingConfig:
+    """Training hyperparameters configuration.
     
     Attributes:
         epochs: Maximum number of training epochs.

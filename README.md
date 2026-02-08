@@ -987,7 +987,7 @@ Key configurations in `src/mi3_eeg/config.py`:
 - `test_size`: 0.2 (20% test split)
 - `class_balance_method`: "downsample"
 
-### TuningConfig
+### TrainingConfig
 - `epochs`: 50 (default for per-subject)
 - `batch_size`: 64
 - `learning_rate`: 0.01
