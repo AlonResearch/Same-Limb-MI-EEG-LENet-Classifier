@@ -198,4 +198,4 @@ tests/test_dataset.py
 tests/test_integration.py
 tests/test_logger.py
 tests/test_model.py
-tests/test_training.py
+tests/test_tuning.py
