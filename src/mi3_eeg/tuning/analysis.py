@@ -103,16 +103,16 @@ def analyze_tuning_results(
         config_data = json.load(f)
     
     # Print summary
-    print(f"\n{'='*80}")
-    print(f"Tuning Results for {subject_id} ({sampling_rate}Hz)")
-    print(f"{'='*80}")
-    print(f"Tuned on: {config_data['tuned_date']}")
-    print(f"Best trial: {config_data['best_trial_number']} / {config_data['n_trials']}")
-    print(f"Best val F1: {config_data['best_val_f1']:.4f}")
-    print(f"\nBest Hyperparameters:")
+    logger.info(f"\n{'='*80}")
+    logger.info(f"Tuning Results for {subject_id} ({sampling_rate}Hz)")
+    logger.info(f"{'='*80}")
+    logger.info(f"Tuned on: {config_data['tuned_date']}")
+    logger.info(f"Best trial: {config_data['best_trial_number']} / {config_data['n_trials']}")
+    logger.info(f"Best val F1: {config_data['best_val_f1']:.4f}")
+    logger.info(f"\nBest Hyperparameters:")
     for param, value in config_data['hyperparameters'].items():
-        print(f"  {param:30s}: {value}")
-    print(f"{'='*80}\n")
+        logger.info(f"  {param:30s}: {value}")
+    logger.info(f"{'='*80}\n")
 
 
 def compare_subjects(
@@ -164,15 +164,15 @@ def compare_subjects(
         }
     
     # Print comparison
-    print(f"\n{'='*80}")
-    print(f"Hyperparameter Comparison Across Subjects")
-    print(f"{'='*80}\n")
-    print(f"{'Subject':<12} {'Val F1':<10} {'LR':<12} {'Dropout':<10} {'Batch':<8} {'Patience':<10}")
-    print(f"{'-'*80}")
+    logger.info(f"\n{'='*80}")
+    logger.info(f"Hyperparameter Comparison Across Subjects")
+    logger.info(f"{'='*80}\n")
+    logger.info(f"{'Subject':<12} {'Val F1':<10} {'LR':<12} {'Dropout':<10} {'Batch':<8} {'Patience':<10}")
+    logger.info(f"{'-'*80}")
     
     for subject_id, data in sorted(results.items()):
         hp = data['hyperparameters']
-        print(
+        logger.info(
             f"{subject_id:<12} "
             f"{data['best_val_f1']:<10.4f} "
             f"{hp['learning_rate']:<12.6f} "
@@ -181,7 +181,7 @@ def compare_subjects(
             f"{hp['early_stopping_patience']:<10}"
         )
     
-    print(f"{'-'*80}\n")
+    logger.info(f"{'-'*80}\n")
     
     return results
 
@@ -221,9 +221,9 @@ def main():
         analyze_tuning_results(args.subject, args.sampling_rate)
     else:
         parser.print_help()
-        print("\nExample usage:")
-        print("  python -m mi3_eeg.tuning.analysis --subject sub-001")
-        print("  python -m mi3_eeg.tuning.analysis --compare")
+        logger.info("\nExample usage:")
+        logger.info("  python -m mi3_eeg.tuning.analysis --subject sub-001")
+        logger.info("  python -m mi3_eeg.tuning.analysis --compare")
 
 
 if __name__ == "__main__":

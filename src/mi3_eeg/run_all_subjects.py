@@ -99,18 +99,18 @@ def ask_user_proceed(valid_count: int, invalid_count: int) -> bool:
     Returns:
         True if user wants to proceed, False otherwise
     """
-    print()
-    print("=" * 80)
-    print(f"VALIDATION SUMMARY: {valid_count} valid, {invalid_count} invalid")
-    print("=" * 80)
+    logger.info("")
+    logger.info("=" * 80)
+    logger.info(f"VALIDATION SUMMARY: {valid_count} valid, {invalid_count} invalid")
+    logger.info("=" * 80)
     
     if valid_count == 0:
-        print("❌ No valid files found! Cannot proceed.")
-        print("   Please check the dataset or download from the original source.")
+        logger.error("❌ No valid files found! Cannot proceed.")
+        logger.error("   Please check the dataset or download from the original source.")
         return False
     
     if invalid_count > 0:
-        print(
+        logger.warning(
             f"\n⚠️  {invalid_count} file(s) could not be loaded (format errors).\n"
             f"   Would you like to proceed with the {valid_count} valid file(s)?"
         )
@@ -121,7 +121,7 @@ def ask_user_proceed(valid_count: int, invalid_count: int) -> bool:
             elif response in ['no', 'n']:
                 return False
             else:
-                print("Please enter 'yes' or 'no'")
+                logger.info("Please enter 'yes' or 'no'")
     
     return True
 
