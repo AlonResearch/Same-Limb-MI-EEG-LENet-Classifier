@@ -209,7 +209,7 @@ if ($allPass) {
     Write-Host "    pytest" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "  - Run group analysis:"
-    Write-Host "    python -m mi3_eeg.analysis.group_analysis" -ForegroundColor Cyan
+    Write-Host "    python -m mi3_eeg.analysis" -ForegroundColor Cyan
     Write-Host ""
     exit 0
 } else {

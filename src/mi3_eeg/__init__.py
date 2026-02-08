@@ -60,6 +60,13 @@ from mi3_eeg.visualization import (
     plot_training_curves,
 )
 
+# Data formatting
+from mi3_eeg.data_formatting import (
+    convert_raw_format,
+    detect_format,
+    format_and_save,
+)
+
 __all__ = [
     # Version
     "__version__",
@@ -96,4 +103,8 @@ __all__ = [
     # Visualization
     "plot_training_curves",
     "plot_confusion_matrix",
+    # Data formatting
+    "convert_raw_format",
+    "detect_format",
+    "format_and_save",
 ]

@@ -7,12 +7,13 @@ This package contains modules for:
 - Topographical brain mapping
 - Group-level statistical analysis
 
-Note: group_analysis.py is primarily executed as a script (python -m mi3_eeg.analysis.group_analysis)
-and is not imported here to avoid module loading duplication warnings.
+Note: group_analysis.py should be executed via the __main__.py entry point
+(python -m mi3_eeg.analysis) to properly handle module imports.
 """
 
 from __future__ import annotations
 
+from mi3_eeg.analysis.group_analysis import run_group_analysis
 from mi3_eeg.analysis.metrics_aggregator import (
     aggregate_all_metrics,
     compute_metrics_from_confusion_matrix,
