@@ -39,7 +39,10 @@ def main(
     all_files = sorted(derivatives_path.glob("*.mat"))
     
     if not all_files:
-        logger.error("No .mat files found in derivatives folder!")
+        logger.error(
+            "No .mat files found in derivatives folder!\n"
+            "See the Dataset section in README.md for download instructions."
+        )
         return
     
     logger.info(f"Found {len(all_files)} .mat file(s):")

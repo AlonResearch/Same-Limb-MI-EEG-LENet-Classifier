@@ -70,9 +70,10 @@ def main(
         if not available_files:
             logger.error(
                 f"No .mat files found in {paths.dataset_derivatives}\n"
-                "Please download the MI3 dataset and place it in the derivatives folder."
+                "Please download the MI3 dataset and place it in the derivatives folder.\n"
+                "See the Dataset section in README.md for download instructions."
             )
-            raise ValueError(f"No dataset files found in {paths.dataset_derivatives}")
+            return
         
         # Auto-select first subject
         subject_file = available_files[0].name
