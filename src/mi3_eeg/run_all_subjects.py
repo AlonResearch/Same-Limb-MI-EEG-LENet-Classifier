@@ -15,17 +15,40 @@ def main():
     metrics_path = paths.reports_metrics
     
     # Find all .mat files (both raw and standardized formats)
-    mat_files = sorted(derivatives_path.glob("*.mat"))
+    all_files = sorted(derivatives_path.glob("*.mat"))
     
-    if not mat_files:
+    if not all_files:
         logger.error("No .mat files found in derivatives folder!")
         return
     
-    logger.info(f"Found {len(mat_files)} subject files:")
+    logger.info(f"Found {len(all_files)} .mat file(s):")
+    for f in all_files:
+        logger.info(f"  - {f.name}")
+    
+    # Deduplicate by subject ID: prefer standardized format over raw format
+    subject_files = {}
+    for f in all_files:
+        # Extract subject ID (e.g., "sub-001" from "sub-001_eeg200hz.mat" or "sub-001_task-motorimagery_eeg.mat")
+        subject_id = f.name.split('_')[0]
+        
+        # Check if this is a standardized file (contains "eegXXXhz" pattern)
+        is_standardized = 'eeg200hz' in f.name.lower() or 'eeg90hz' in f.name.lower()
+        
+        if subject_id not in subject_files:
+            # First file for this subject
+            subject_files[subject_id] = f
+        elif is_standardized:
+            # Prefer standardized format over raw format
+            subject_files[subject_id] = f
+        # else: keep existing (either both are raw, or we already have standardized)
+    
+    mat_files = list(subject_files.values())
+    
+    logger.info(f"\nAfter deduplication: {len(mat_files)} unique subject(s):")
     for f in mat_files:
         logger.info(f"  - {f.name}")
     
-    logger.info(f"Starting training runs with {training_config.epochs} epochs each ({len(mat_files)} total)...")
+    logger.info(f"\nStarting training runs with {training_config.epochs} epochs each ({len(mat_files)} total)...")
     
     # Run training on each file
     for i, mat_file in enumerate(mat_files, 1):
