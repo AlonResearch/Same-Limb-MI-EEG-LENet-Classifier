@@ -6,11 +6,13 @@ This package contains modules for:
 - Time-frequency analysis (ERD/ERS patterns)
 - Topographical brain mapping
 - Group-level statistical analysis
+
+Note: group_analysis.py is primarily executed as a script (python -m mi3_eeg.analysis.group_analysis)
+and is not imported here to avoid module loading duplication warnings.
 """
 
 from __future__ import annotations
 
-from mi3_eeg.analysis.group_analysis import run_group_analysis
 from mi3_eeg.analysis.metrics_aggregator import (
     aggregate_all_metrics,
     compute_metrics_from_confusion_matrix,

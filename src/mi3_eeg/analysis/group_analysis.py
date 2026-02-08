@@ -582,7 +582,12 @@ def run_group_analysis(
 
 
 def main():
-    """Main entry point for group analysis script."""
+    """Main entry point for group analysis.
+    
+    This function is called by __main__.py when the analysis package is executed.
+    It should not be called directly with if __name__ == "__main__" to avoid
+    module duplication warnings when using python -m mi3_eeg.analysis.
+    """
     import argparse
     from mi3_eeg.logger import setup_logger
     
@@ -608,7 +613,3 @@ def main():
         model_name=args.model,
         subjects_subset=args.subjects,
     )
-
-
-if __name__ == "__main__":
-    main()
