@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import torch
-from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.metrics import accuracy_score, confusion_matrix, f1_score
 
 from mi3_eeg.config import CLASS_LABELS
 from mi3_eeg.logger import logger
@@ -30,6 +30,7 @@ class EvaluationResults:
         predictions: Model predictions for each sample.
         true_labels: Ground truth labels.
         overall_accuracy: Overall classification accuracy.
+        overall_f1: Overall F1 score (macro-averaged).
         class_accuracies: Per-class accuracy dictionary.
         confusion_matrix: Confusion matrix array.
         class_names: List of class names.
@@ -38,6 +39,7 @@ class EvaluationResults:
     predictions: np.ndarray
     true_labels: np.ndarray
     overall_accuracy: float
+    overall_f1: float
     class_accuracies: dict[str, float]
     confusion_matrix: np.ndarray
     class_names: list[str]
@@ -139,6 +141,9 @@ def evaluate_model(
     # Compute overall accuracy
     overall_acc = accuracy_score(true_labels, predictions)
     
+    # Compute overall F1 score (macro-averaged)
+    overall_f1 = f1_score(true_labels, predictions, average="macro", zero_division=0)
+    
     # Compute per-class accuracies
     class_accs = compute_class_accuracies(predictions, true_labels, class_names)
     
@@ -150,6 +155,7 @@ def evaluate_model(
     )
     
     logger.info(f"Overall Accuracy: {overall_acc * 100:.2f}%")
+    logger.info(f"Overall F1 Score: {overall_f1 * 100:.2f}%")
     for class_name, acc in class_accs.items():
         if not np.isnan(acc):
             logger.info(f"{class_name} Accuracy: {acc * 100:.2f}%")
@@ -158,6 +164,7 @@ def evaluate_model(
         predictions=predictions,
         true_labels=true_labels,
         overall_accuracy=overall_acc,
+        overall_f1=overall_f1,
         class_accuracies=class_accs,
         confusion_matrix=cm,
         class_names=class_names,
@@ -207,6 +214,7 @@ def save_evaluation_results(
     results_dict = {
         "model_name": model_name,
         "overall_accuracy": float(results.overall_accuracy),
+        "overall_f1": float(results.overall_f1),
         "class_accuracies": {
             k: float(v) if not np.isnan(v) else None
             for k, v in results.class_accuracies.items()
@@ -235,7 +243,7 @@ def print_evaluation_summary(results: dict[str, EvaluationResults]) -> None:
     
     # Header
     class_names = next(iter(results.values())).class_names
-    header = f"{'Model':<20} | {'Overall Acc.':<12}"
+    header = f"{'Model':<20} | {'Overall Acc.':<12} | {'Overall F1':<12}"
     for class_name in class_names:
         header += f" | {class_name + ' Acc.':<12}"
     logger.debug(header)
@@ -243,7 +251,7 @@ def print_evaluation_summary(results: dict[str, EvaluationResults]) -> None:
     
     # Results for each model
     for model_name, result in results.items():
-        row = f"{model_name:<20} | {result.overall_accuracy * 100:>11.2f}%"
+        row = f"{model_name:<20} | {result.overall_accuracy * 100:>11.2f}% | {result.overall_f1 * 100:>11.2f}%"
         for class_name in class_names:
             acc = result.class_accuracies[class_name]
             if np.isnan(acc):

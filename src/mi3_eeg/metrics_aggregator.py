@@ -114,6 +114,7 @@ def aggregate_all_metrics(metrics_dir: Path, model_name: str = "lenet") -> pd.Da
         row_data = {
             "Subject": subject_id,
             "Overall_Accuracy": results.get("overall_accuracy", np.nan),
+            "Overall_F1": results.get("overall_f1", np.nan),
         }
         
         # Add per-class accuracies
