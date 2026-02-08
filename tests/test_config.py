@@ -62,6 +62,7 @@ def test_paths_create_directories(tmp_path: Path) -> None:
         reports_figures=tmp_path / "reports" / "figures",
         reports_metrics=tmp_path / "reports" / "metrics",
         reports_logs=tmp_path / "reports" / "logs",
+        reports_group_analysis=tmp_path / "reports" / "group_analysis",
     )
     
     # Create directories

@@ -94,5 +94,6 @@ def mock_paths(tmp_path: Path) -> Path:
     (tmp_path / "reports" / "figures").mkdir(parents=True)
     (tmp_path / "reports" / "metrics").mkdir(parents=True)
     (tmp_path / "reports" / "logs").mkdir(parents=True)
+    (tmp_path / "reports" / "group_analysis").mkdir(parents=True)
     
     return tmp_path

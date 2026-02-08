@@ -85,6 +85,17 @@ def test_early_stopper_reset() -> None:
     assert stopper.counter == 0
 
 
+def test_early_stopper_with_nan_metric() -> None:
+    """Test early stopper behavior with NaN metric values."""
+    stopper = EarlyStopper(patience=1, min_delta=0.01)
+
+    should_stop = stopper.step(np.nan)
+
+    assert should_stop is True
+    assert stopper.best_metric == -np.inf
+    assert stopper.counter == 1
+
+
 def test_training_history_immutable() -> None:
     """Test that TrainingHistory is immutable."""
     history = TrainingHistory(
@@ -198,6 +209,106 @@ def test_train_model_basic(sample_eeg_data: tuple[np.ndarray, np.ndarray]) -> No
     assert len(history.test_loss) == 5
     assert 0 <= history.best_val_acc <= 1
     assert 0 <= history.best_epoch < 5
+
+
+def test_train_model_with_empty_loader(sample_eeg_data: tuple[np.ndarray, np.ndarray]) -> None:
+    """Test training behavior with zero-length DataLoader."""
+    data, labels = sample_eeg_data
+
+    train_loader = create_data_loader(
+        data,
+        labels,
+        batch_size=100,
+        shuffle=True,
+        drop_last=True,
+        device="cpu",
+    )
+    val_loader = create_data_loader(
+        data,
+        labels,
+        batch_size=100,
+        shuffle=False,
+        drop_last=True,
+        device="cpu",
+    )
+
+    model = LENet(classes_num=3, channel_count=62, drop_out=0.5)
+    config = TrainingConfig(
+        epochs=1,
+        batch_size=100,
+        learning_rate=0.01,
+        device="cpu",
+    )
+
+    with pytest.raises(ZeroDivisionError):
+        train_model(model, train_loader, val_loader, config)
+
+
+def test_train_model_saves_on_exception(
+    sample_eeg_data: tuple[np.ndarray, np.ndarray],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that best model is saved before a training exception."""
+    data, labels = sample_eeg_data
+
+    train_loader = create_data_loader(data, labels, batch_size=4, device="cpu")
+    val_loader = create_data_loader(data, labels, batch_size=4, device="cpu")
+    save_path = tmp_path / "best_model.pth"
+
+    call_state = {"count": 0}
+
+    def fake_train_one_epoch(*args, **kwargs):
+        call_state["count"] += 1
+        if call_state["count"] >= 2:
+            raise RuntimeError("boom")
+        optimizer = args[3]
+        optimizer.zero_grad()
+        optimizer.step()
+        return 0.1, 0.5, 0.5
+
+    def fake_validate_one_epoch(*args, **kwargs):
+        return 0.1, 0.6, 0.6
+
+    import mi3_eeg.train as train_module
+
+    monkeypatch.setattr(train_module, "train_one_epoch", fake_train_one_epoch)
+    monkeypatch.setattr(train_module, "validate_one_epoch", fake_validate_one_epoch)
+
+    model = LENet(classes_num=3, channel_count=62, drop_out=0.5)
+    config = TrainingConfig(
+        epochs=3,
+        batch_size=4,
+        learning_rate=0.01,
+        device="cpu",
+    )
+
+    with pytest.raises(RuntimeError, match="boom"):
+        train_module.train_model(model, train_loader, val_loader, config, save_path=save_path)
+
+    assert save_path.exists()
+
+
+def test_train_model_with_very_high_patience(sample_eeg_data: tuple[np.ndarray, np.ndarray]) -> None:
+    """Test training with patience larger than total epochs."""
+    data, labels = sample_eeg_data
+
+    train_loader = create_data_loader(data, labels, batch_size=4, device="cpu")
+    val_loader = create_data_loader(data, labels, batch_size=4, device="cpu")
+
+    model = LENet(classes_num=3, channel_count=62, drop_out=0.5)
+    config = TrainingConfig(
+        epochs=3,
+        batch_size=4,
+        learning_rate=0.01,
+        device="cpu",
+        early_stopping_patience=100,
+    )
+
+    history = train_model(model, train_loader, val_loader, config)
+
+    assert len(history.train_acc) == 3
+    assert len(history.test_acc) == 3
 
 
 def test_train_model_saves_best(

@@ -5,11 +5,14 @@ and verifies the dataloader works correctly with the formatted data.
 """
 
 from pathlib import Path
+import logging
 
 import numpy as np
 import pytest
+import scipy.io as scio
 
 from mi3_eeg.dataset import create_data_loader, load_mat_from_derivatives
+from mi3_eeg.data_formatting.dataformatter import convert_raw_format, format_and_save
 
 
 class TestFormattedDataLoading:
@@ -51,7 +54,6 @@ class TestFormattedDataLoading:
         """Test that labels are correct (0=Rest, 1=Elbow, 2=Hand)."""
         data_bundle = load_mat_from_derivatives(
             mat_path=formatted_data_path,
-            reduce_rest_ratio=1.0,
             expected_sampling_rate=200,
             validate_timepoints=True,
         )
@@ -170,3 +172,53 @@ class TestFormattedDataLoading:
         )
 
         assert data_bundle.data.shape[2] == 800  # 200Hz * 4s
+
+
+def test_convert_raw_format_with_wrong_label_values(caplog: pytest.LogCaptureFixture) -> None:
+    """Test raw format conversion logs warnings for unexpected task labels."""
+    task_data = np.random.randn(1, 2, 62, 360).astype(np.float32)
+    task_label = np.array([[0, 1]])
+    rest_data = np.random.randn(2, 62, 360).astype(np.float32)
+
+    logger = logging.getLogger("mi3_eeg")
+    original_propagate = logger.propagate
+    logger.propagate = True
+    try:
+        with caplog.at_level(logging.WARNING):
+            convert_raw_format(task_data, task_label, rest_data)
+    finally:
+        logger.propagate = original_propagate
+
+    assert any(
+        "Expected task labels" in record.message for record in caplog.records
+    )
+
+
+def test_convert_raw_format_with_unusual_timepoints() -> None:
+    """Test sampling rate inference with non-standard timepoint counts."""
+    task_data = np.random.randn(1, 2, 62, 720).astype(np.float32)
+    task_label = np.array([[1, 2]])
+    rest_data = np.random.randn(2, 62, 720).astype(np.float32)
+
+    _, _, sampling_rate = convert_raw_format(task_data, task_label, rest_data)
+
+    assert sampling_rate == 180
+
+
+def test_format_and_save_creates_directories(tmp_path: Path) -> None:
+    """Test format_and_save creates the output directory when missing."""
+    task_data = np.random.randn(1, 2, 62, 360).astype(np.float32)
+    task_label = np.array([[1, 2]])
+    rest_data = np.random.randn(2, 62, 360).astype(np.float32)
+
+    input_path = tmp_path / "sub-001_task-motorimagery_eeg.mat"
+    scio.savemat(
+        str(input_path),
+        {"task_data": task_data, "task_label": task_label, "rest_data": rest_data},
+    )
+
+    output_dir = tmp_path / "formatted" / "out"
+    output_path = format_and_save(input_path=input_path, output_dir=output_dir)
+
+    assert output_dir.exists()
+    assert output_path.exists()
