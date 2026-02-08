@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import torch
+from sklearn.metrics import f1_score
 from torch import nn, optim
 
 from mi3_eeg.config import TrainingConfig
@@ -71,8 +72,9 @@ class TrainingHistory:
         test_acc: List of validation accuracies per epoch.
         train_loss: List of training losses per epoch.
         test_loss: List of validation losses per epoch.
-        best_epoch: Epoch with best validation accuracy.
+        best_epoch: Epoch with best validation F1 score.
         best_val_acc: Best validation accuracy achieved.
+        best_val_f1: Best validation F1 score achieved.
     """
 
     train_acc: list[float]
@@ -81,6 +83,7 @@ class TrainingHistory:
     test_loss: list[float]
     best_epoch: int
     best_val_acc: float
+    best_val_f1: float
 
 
 def train_one_epoch(
@@ -136,7 +139,7 @@ def validate_one_epoch(
     test_loader: DataLoader,
     criterion: nn.Module,
     device: str = "cuda",
-) -> tuple[float, float]:
+) -> tuple[float, float, float]:
     """Validate model for one epoch.
     
     Args:
@@ -146,12 +149,14 @@ def validate_one_epoch(
         device: Device to use for validation.
     
     Returns:
-        Tuple of (average_loss, accuracy).
+        Tuple of (average_loss, accuracy, macro_f1).
     """
     model.eval()
     total_loss = 0.0
     correct = 0
     total = 0
+    all_targets = []
+    all_predictions = []
 
     with torch.no_grad():
         for inputs, targets in test_loader:
@@ -164,17 +169,20 @@ def validate_one_epoch(
             _, predicted = outputs.max(1)
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
+            all_predictions.extend(predicted.detach().cpu().numpy())
+            all_targets.extend(targets.detach().cpu().numpy())
 
     avg_loss = total_loss / len(test_loader)
     accuracy = correct / total
+    macro_f1 = f1_score(all_targets, all_predictions, average="macro")
 
-    return avg_loss, accuracy
+    return avg_loss, accuracy, macro_f1
 
 
 def train_model(
     model: nn.Module,
     train_loader: DataLoader,
-    test_loader: DataLoader,
+    val_loader: DataLoader,
     config: TrainingConfig,
     save_path: Path | None = None,
 ) -> TrainingHistory:
@@ -183,7 +191,7 @@ def train_model(
     Args:
         model: Neural network model to train.
         train_loader: DataLoader for training data.
-        test_loader: DataLoader for validation data.
+        val_loader: DataLoader for validation data.
         config: Training configuration.
         save_path: Optional path to save best model weights.
     
@@ -218,6 +226,7 @@ def train_model(
     test_loss_history: list[float] = []
     
     best_val_acc = 0.0
+    best_val_f1 = 0.0
     best_epoch = 0
     best_model_state = None
 
@@ -231,8 +240,8 @@ def train_model(
         train_loss_history.append(train_loss)
 
         # Validate
-        val_loss, val_acc = validate_one_epoch(
-            model, test_loader, criterion, device
+        val_loss, val_acc, val_f1 = validate_one_epoch(
+            model, val_loader, criterion, device
         )
         test_acc_history.append(val_acc)
         test_loss_history.append(val_loss)
@@ -245,11 +254,13 @@ def train_model(
             logger.info(
                 f"Epoch {epoch + 1}/{config.epochs} | "
                 f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc * 100:.2f}% | "
-                f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc * 100:.2f}%"
+                f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc * 100:.2f}%, "
+                f"Val F1: {val_f1 * 100:.2f}%"
             )
 
         # Track best model
-        if val_acc > best_val_acc or best_model_state is None:
+        if val_f1 > best_val_f1 or best_model_state is None:
+            best_val_f1 = val_f1
             best_val_acc = val_acc
             best_epoch = epoch
             best_model_state = model.state_dict().copy()
@@ -259,10 +270,10 @@ def train_model(
                 logger.debug(f"Best model saved at epoch {epoch + 1}")
 
         # Early stopping check
-        if early_stopper.step(val_acc):
+        if early_stopper.step(val_f1):
             logger.info(
                 f"Early stopping triggered at epoch {epoch + 1}. "
-                f"Best val acc: {best_val_acc * 100:.2f}% at epoch {best_epoch + 1}"
+                f"Best val F1: {best_val_f1 * 100:.2f}% at epoch {best_epoch + 1}"
             )
             break
 
@@ -272,7 +283,7 @@ def train_model(
         logger.info(f"Restored best model from epoch {best_epoch + 1}")
 
     logger.info(
-        f"Training completed. Best validation accuracy: {best_val_acc * 100:.2f}%"
+        f"Training completed. Best validation F1: {best_val_f1 * 100:.2f}%"
     )
 
     return TrainingHistory(
@@ -282,6 +293,7 @@ def train_model(
         test_loss=test_loss_history,
         best_epoch=best_epoch,
         best_val_acc=best_val_acc,
+        best_val_f1=best_val_f1,
     )
 
 
@@ -289,8 +301,8 @@ def quick_train(
     model: nn.Module,
     train_data: np.ndarray,
     train_labels: np.ndarray,
-    test_data: np.ndarray,
-    test_labels: np.ndarray,
+    val_data: np.ndarray,
+    val_labels: np.ndarray,
     epochs: int = 500,
     batch_size: int = 64,
     device: str = "cuda",
@@ -304,14 +316,14 @@ def quick_train(
         model: Neural network model.
         train_data: Training data array.
         train_labels: Training labels array.
-        test_data: Test data array.
-        test_labels: Test labels array.
+        val_data: Validation data array.
+        val_labels: Validation labels array.
         epochs: Number of training epochs.
         batch_size: Batch size.
         device: Device to use.
     
     Returns:
-        Tuple of (final_train_acc, final_test_acc).
+        Tuple of (final_train_acc, final_val_acc).
     """
     from mi3_eeg.dataset import create_data_loader
 
@@ -319,8 +331,8 @@ def quick_train(
     train_loader = create_data_loader(
         train_data, train_labels, batch_size=batch_size, device=device
     )
-    test_loader = create_data_loader(
-        test_data, test_labels, batch_size=batch_size, device=device
+    val_loader = create_data_loader(
+        val_data, val_labels, batch_size=batch_size, device=device
     )
 
     # Create config
@@ -331,6 +343,6 @@ def quick_train(
     )
 
     # Train
-    history = train_model(model, train_loader, test_loader, config)
+    history = train_model(model, train_loader, val_loader, config)
 
     return history.train_acc[-1], history.test_acc[-1]
